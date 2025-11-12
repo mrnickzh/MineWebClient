@@ -17,6 +17,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 target_link_options(MineWeb PRIVATE
         "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/src/payload.html"
         "SHELL:-s USE_WEBGL2=1"
+        "SHELL:-s MIN_WEBGL_VERSION=2"
+        "SHELL:-s MAX_WEBGL_VERSION=2"
         "SHELL:-s WASM=1"
         "SHELL:-s MODULARIZE=1"
         "SHELL:-s ALLOW_MEMORY_GROWTH=1"
@@ -25,6 +27,7 @@ target_link_options(MineWeb PRIVATE
         "SHELL:-s NO_EXIT_RUNTIME=1"
         "SHELL:-s ASSERTIONS=1"
         "SHELL:-s USE_GLFW=3"
+        "SHELL:-s STB_IMAGE=1"
         "SHELL:-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1"
         "SHELL:-s FORCE_FILESYSTEM=1"
         "SHELL:-s ASYNCIFY"
