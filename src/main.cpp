@@ -4,18 +4,17 @@
 #include <GLES3/gl3.h>
 #include <GLFW/glfw3.h>
 
+#include "main.hpp"
+
 #define GLM_FORCE_PURE
 #include "../lib/glm/glm.hpp"
 #include "../lib/glm/gtc/matrix_transform.hpp"
 #include "../lib/glm/gtc/type_ptr.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "../lib/stb/stb_image.hpp"
-
 #include "Shader.hpp"
 #include "Camera.hpp"
+#include "Objects/BlockObject.hpp"
 
-Shader* ourShader;
 Camera* ourCamera;
 
 GLFWwindow* window = nullptr;
@@ -67,16 +66,9 @@ float vertices[] = {
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
-unsigned int indices[] = {
-    0, 1, 3, // first triangle
-    1, 2, 3  // second triangle
-};
-
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
-
-int width, height, nrChannels;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -86,15 +78,9 @@ float lastX = 400, lastY = 300;
 float yaw = -90.0f;
 float pitch = 0.0f;
 
-GLuint VAO;
-GLuint VBO;
-GLuint EBO;
-
 GLuint vertexShader;
 GLuint fragmentShader;
 GLuint shaderProgram;
-
-GLuint texture;
 
 bool firstMouse = true;
 
@@ -148,26 +134,23 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void mainLoop() {
-    glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, glm::radians(50.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+    Main::ourShader->use();
+
     glm::mat4 projection;
     projection = glm::perspective(glm::radians(45.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
-    std::cout << (float)windowWidth / (float)windowHeight << std::endl;
+    std::cout << (float)windowWidth / (float)windowHeight << " " << (float)windowWidth << " " << (float)windowHeight << std::endl;
 
-    int modelLoc = glGetUniformLocation(ourShader->ID, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-    int viewLoc = glGetUniformLocation(ourShader->ID, "view");
+    int viewLoc = glGetUniformLocation(Main::ourShader->ID, "view");
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(ourCamera->GetViewMatrix()));
-    int projectionLoc = glGetUniformLocation(ourShader->ID, "projection");
+    int projectionLoc = glGetUniformLocation(Main::ourShader->ID, "projection");
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-    glBindTexture(GL_TEXTURE_2D, texture);
-    ourShader->use();
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    for (std::shared_ptr<Object> obj : Main::objects) {
+        obj->render();
+    }
 
     processInput(window);
     glfwSwapBuffers(window);
@@ -198,45 +181,14 @@ int main() {
 
     glEnable(GL_DEPTH_TEST);
 
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl");
+    Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl");
     ourCamera = new Camera();
 
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    stbi_set_flip_vertically_on_load(true);
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load("/assets/textures/Nagisa_Furukawa.png", &width, &height, &nrChannels, 0);
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
+    for (int i = 0; i < 3; i++) {
+        Main::objects.push_back(std::make_shared<BlockObject>(glm::vec3(0.0f, (float)i, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
     }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    Main::objects.push_back(std::make_shared<BlockObject>(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+    Main::objects.push_back(std::make_shared<BlockObject>(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
 
     glfwMakeContextCurrent(window);
     emscripten_set_main_loop(&mainLoop, 0, 1);
