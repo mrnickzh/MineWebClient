@@ -6,22 +6,30 @@ cors = CORS(app)
 
 @app.route('/', methods=['GET'])
 def getclient():
-    resp = Response(open("cmake-build-debug-emsdk//MineWeb.html").read())
+    resp = Response(open("cmake-build-debug-emsdk//MineWebClient.html").read())
+    resp.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+    resp.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     return resp
 
-@app.route('/MineWeb.js', methods=['GET'])
+@app.route('/MineWebClient.js', methods=['GET'])
 def getjs():
-    resp = Response(open("cmake-build-debug-emsdk//MineWeb.js").read(), mimetype="application/javascript")
+    resp = Response(open("cmake-build-debug-emsdk//MineWebClient.js").read(), mimetype="application/javascript")
+    resp.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+    resp.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     return resp
 
-@app.route('/MineWeb.wasm', methods=['GET'])
+@app.route('/MineWebClient.wasm', methods=['GET'])
 def getwasm():
-    resp = Response(open("cmake-build-debug-emsdk//MineWeb.wasm", "rb").read(), mimetype="application/wasm")
+    resp = Response(open("cmake-build-debug-emsdk//MineWebClient.wasm", "rb").read(), mimetype="application/wasm")
+    resp.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+    resp.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     return resp
 
-@app.route('/MineWeb.data', methods=['GET'])
+@app.route('/MineWebClient.data', methods=['GET'])
 def getdata():
-    resp = Response(open("cmake-build-debug-emsdk//MineWeb.data", "rb").read(), mimetype="application/octet-stream")
+    resp = Response(open("cmake-build-debug-emsdk//MineWebClient.data", "rb").read(), mimetype="application/octet-stream")
+    resp.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+    resp.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     return resp
 
 app.run(host="localhost", port=3000, threaded=False, debug=True)

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.31)
-project(MineWeb)
+project(MineWebClient)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_EXECUTABLE_SUFFIX ".html")
@@ -10,11 +10,11 @@ endif()
 
 file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "src/*.hpp")
 file(GLOB_RECURSE LIB_FILES "lib/*.cpp" "lib/*.hpp" "lib/*.h")
-add_executable(MineWeb ${SOURCE_FILES} ${LIB_FILES})
+add_executable(MineWebClient ${SOURCE_FILES} ${LIB_FILES})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
-target_link_options(MineWeb PRIVATE
+target_link_options(MineWebClient PRIVATE
         "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/src/payload.html"
         "SHELL:-s USE_WEBGL2=1"
         "SHELL:-s MIN_WEBGL_VERSION=2"
@@ -31,17 +31,23 @@ target_link_options(MineWeb PRIVATE
         "SHELL:-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1"
         "SHELL:-s FORCE_FILESYSTEM=1"
         "SHELL:-s ASYNCIFY"
-        "SHELL:-s ENVIRONMENT=web"
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/assets@/assets"
         "SHELL:-s STACK_SIZE=16777216"
         "SHELL:-s INITIAL_MEMORY=134217728"
 )
 
-target_include_directories(MineWeb PRIVATE
+target_include_directories(MineWebClient PRIVATE
         ${EMSCRIPTEN_ROOT_PATH}/cache/sysroot/include
 )
 
-target_link_libraries(MineWeb PRIVATE
+add_subdirectory("D:/MineWeb/MineWebServer"
+        "${CMAKE_BINARY_DIR}/server-build")
+
+target_link_libraries(MineWebClient PRIVATE MineWebServer)
+
+target_include_directories(MineWebClient PRIVATE "D:/MineWeb/MineWebServer")
+
+target_link_libraries(MineWebClient PRIVATE
         "-lGL"
         "-lhtml5"
         "-lwebsocket.js"

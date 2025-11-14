@@ -15,6 +15,12 @@
 #include "Camera.hpp"
 #include "Objects/BlockObject.hpp"
 
+#include "../MineWebServer/src/Server.hpp"
+#include "Protocol/PacketHelper.hpp"
+#include "Protocol/Socket.hpp"
+#include "Protocol/Packets/AddMapObject.hpp"
+#include "Protocol/Packets/HandShakePacket.hpp"
+
 Camera* ourCamera;
 
 GLFWwindow* window = nullptr;
@@ -87,6 +93,7 @@ bool firstMouse = true;
 EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     windowWidth = e->windowInnerWidth;
     windowHeight = e->windowInnerHeight;
+    glViewport(0, 0, windowWidth, windowHeight);
     glfwSetWindowSize(window, windowWidth, windowHeight);
 
     return EM_TRUE;
@@ -141,12 +148,9 @@ void mainLoop() {
 
     glm::mat4 projection;
     projection = glm::perspective(glm::radians(45.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
-    std::cout << (float)windowWidth / (float)windowHeight << " " << (float)windowWidth << " " << (float)windowHeight << std::endl;
 
-    int viewLoc = glGetUniformLocation(Main::ourShader->ID, "view");
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(ourCamera->GetViewMatrix()));
-    int projectionLoc = glGetUniformLocation(Main::ourShader->ID, "projection");
-    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+    Main::ourShader->setMat4("projection", projection);
+    Main::ourShader->setMat4("view", ourCamera->GetViewMatrix());
 
     for (std::shared_ptr<Object> obj : Main::objects) {
         obj->render();
@@ -176,6 +180,10 @@ int main() {
         return EXIT_FAILURE;
     }
 
+    PacketHelper::registerPacket(0, []() { return new HandShakePacket(); });
+    PacketHelper::registerPacket(1, []() { return new AddMapObject(); });
+
+
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouse_callback);
 
@@ -184,13 +192,12 @@ int main() {
     Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl");
     ourCamera = new Camera();
 
-    for (int i = 0; i < 3; i++) {
-        Main::objects.push_back(std::make_shared<BlockObject>(glm::vec3(0.0f, (float)i, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-    }
-    Main::objects.push_back(std::make_shared<BlockObject>(glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-    Main::objects.push_back(std::make_shared<BlockObject>(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+    Main::isSingleplayer = true;
+    Main::serverInstance.setCallback(SocketClient::on_message);
+    SocketClient::on_open();
 
     glfwMakeContextCurrent(window);
+    glViewport(0, 0, windowWidth, windowHeight);
     emscripten_set_main_loop(&mainLoop, 0, 1);
 
     glfwDestroyWindow(window);
