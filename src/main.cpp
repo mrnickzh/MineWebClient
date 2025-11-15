@@ -192,9 +192,10 @@ int main() {
     Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl");
     ourCamera = new Camera();
 
-    Main::isSingleplayer = true;
-    Main::serverInstance.setCallback(SocketClient::on_message);
-    SocketClient::on_open();
+    // Main::isSingleplayer = true;
+    // Main::serverInstance.setCallback(SocketClient::on_message);
+    // SocketClient::on_open();
+    SocketClient::connect();
 
     glfwMakeContextCurrent(window);
     glViewport(0, 0, windowWidth, windowHeight);
