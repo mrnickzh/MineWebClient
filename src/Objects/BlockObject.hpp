@@ -12,9 +12,11 @@ class BlockObject : public Object {
 public:
     GLuint VAO = 0, VBO = 0;
     GLuint texture;
-    int width, height, nrChannels;
+    glm::mat4 model;
 
-    BlockObject(glm::vec3 position, glm::vec3 rotation) : Object(position, rotation) {};
+    BlockObject(glm::vec3 position, glm::vec3 rotation, int vuid);
 
     void render() override;
+    void setposition(glm::vec3 position) override;
+    void setrotation(glm::vec3 rotation) override;
 };

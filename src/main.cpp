@@ -19,14 +19,9 @@
 #include "Protocol/PacketHelper.hpp"
 #include "Protocol/Socket.hpp"
 #include "Protocol/Packets/AddMapObject.hpp"
+#include "Protocol/Packets/GenerateChunk.hpp"
 #include "Protocol/Packets/HandShakePacket.hpp"
-
-Camera* ourCamera;
-
-GLFWwindow* window = nullptr;
-
-int windowWidth = 800;
-int windowHeight = 600;
+#include "Utils/VertexManager.hpp"
 
 float vertices[] = {
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -72,17 +67,17 @@ float vertices[] = {
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
+Camera* ourCamera;
+
+GLFWwindow* window = nullptr;
+
+int windowWidth = 800;
+int windowHeight = 600;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 float lastX = 400, lastY = 300;
-
-float yaw = -90.0f;
-float pitch = 0.0f;
 
 GLuint vertexShader;
 GLuint fragmentShader;
@@ -140,8 +135,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     ourCamera->ProcessMouseMovement(xoffset, yoffset);
 }
 
-void mainLoop() {
-    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+void preRender() {
+    glClearColor(0.53f, 0.81f, 0.98f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     Main::ourShader->use();
@@ -149,12 +144,26 @@ void mainLoop() {
     glm::mat4 projection;
     projection = glm::perspective(glm::radians(45.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
 
-    Main::ourShader->setMat4("projection", projection);
-    Main::ourShader->setMat4("view", ourCamera->GetViewMatrix());
+    glUniformMatrix4fv(Main::ourShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
+    glUniformMatrix4fv(Main::ourShader->uniforms["view"], 1, GL_FALSE, &ourCamera->GetViewMatrix()[0][0]);
+}
 
-    for (std::shared_ptr<Object> obj : Main::objects) {
+void render() {
+    for (const auto& block : Main::chunks[glm::vec3(0.0f, 0.0f, 0.0f)]->blocks) {
+        Main::objects.insert(Main::objects.end(), block.second);
+    }
+
+    for (std::shared_ptr<Object>& obj : Main::objects) {
         obj->render();
     }
+
+    Main::objects.clear();
+}
+
+void mainLoop() {
+    preRender();
+
+    render();
 
     processInput(window);
     glfwSwapBuffers(window);
@@ -182,7 +191,7 @@ int main() {
 
     PacketHelper::registerPacket(0, []() { return new HandShakePacket(); });
     PacketHelper::registerPacket(1, []() { return new AddMapObject(); });
-
+    PacketHelper::registerPacket(2, []() { return new GenerateChunk(); });
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouse_callback);
@@ -192,10 +201,19 @@ int main() {
     Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl");
     ourCamera = new Camera();
 
-    // Main::isSingleplayer = true;
-    // Main::serverInstance.setCallback(SocketClient::on_message);
-    // SocketClient::on_open();
-    SocketClient::connect();
+    Main::vertexManager = new VertexManager();
+    Main::vertexManager->initVAO(1, vertices, sizeof(vertices), "/assets/textures/stone.png");
+    Main::vertexManager->initVAO(2, vertices, sizeof(vertices), "/assets/textures/dirt.png");
+    Main::vertexManager->initVAO(3, vertices, sizeof(vertices), "/assets/textures/grass.png");
+
+    Main::isSingleplayer = true;
+    Main::serverInstance.setCallback(SocketClient::on_message);
+    SocketClient::on_open();
+    // SocketClient::connect();
+
+    GenerateChunk pkt;
+    pkt.chunkpos = glm::vec3(0.0f, 0.0f, 0.0f);
+    SocketClient::sendPacket(&pkt);
 
     glfwMakeContextCurrent(window);
     glViewport(0, 0, windowWidth, windowHeight);

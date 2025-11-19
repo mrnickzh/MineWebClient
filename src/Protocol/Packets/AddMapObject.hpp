@@ -3,6 +3,7 @@
 #include "../Packet.hpp"
 #include "../../main.hpp"
 #include "../../Objects/BlockObject.hpp"
+#include "../../Objects/AirObject.hpp"
 
 #define GLM_FORCE_PURE
 #include "../../../lib/glm/glm.hpp"
@@ -24,7 +25,16 @@ class AddMapObject : public Packet {
 
         switch (id) {
             case 0:
-                Main::objects.push_back(std::make_shared<BlockObject>(position, rotation));
+                Main::objects.push_back(std::make_shared<AirObject>(position, rotation));
+                break;
+            case 1:
+                Main::objects.push_back(std::make_shared<BlockObject>(position, rotation, 1));
+                break;
+            case 2:
+                Main::objects.push_back(std::make_shared<BlockObject>(position, rotation, 2));
+                break;
+            case 3:
+                Main::objects.push_back(std::make_shared<BlockObject>(position, rotation, 3));
                 break;
         }
     }
