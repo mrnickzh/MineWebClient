@@ -9,9 +9,10 @@ class Object {
 public:
     glm::vec3 position;
     glm::vec3 rotation;
-    int vuid;
+    int vboid;
+    int texture;
 
-    Object(glm::vec3 position, glm::vec3 rotation, int vuid) : position(position), rotation(rotation), vuid(vuid) {};
+    Object(glm::vec3 position, glm::vec3 rotation, int vboid, int texture) : position(position), rotation(rotation), vboid(vboid), texture(texture) {};
 
     virtual void render() {}
     virtual void setposition(glm::vec3 position) {}

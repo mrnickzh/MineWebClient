@@ -33,17 +33,17 @@ class GenerateChunk : public Packet {
                             break;
                         }
                         case 1: {
-                            std::shared_ptr<BlockObject> blockObject = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 1);
+                            std::shared_ptr<BlockObject> blockObject = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 1);
                             chunkMap->addBlock(glm::vec3(blockpos.x, blockpos.y, blockpos.z), blockObject);
                             break;
                         }
                         case 2: {
-                            std::shared_ptr<BlockObject> blockObject = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 2);
+                            std::shared_ptr<BlockObject> blockObject = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 2);
                             chunkMap->addBlock(glm::vec3(blockpos.x, blockpos.y, blockpos.z), blockObject);
                             break;
                         }
                         case 3: {
-                            std::shared_ptr<BlockObject> blockObject = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 3);
+                            std::shared_ptr<BlockObject> blockObject = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 3);
                             chunkMap->addBlock(glm::vec3(blockpos.x, blockpos.y, blockpos.z), blockObject);
                             break;
                         }
@@ -55,6 +55,7 @@ class GenerateChunk : public Packet {
         // if (ch > 256) {
         //     std::cout << chunkpos.x << " " << chunkpos.y << std::endl;
         // }
+        chunkMap->initTranslations();
         Main::chunks[chunkpos] = chunkMap;
     }
     void send(ByteBuf &buffer) override {

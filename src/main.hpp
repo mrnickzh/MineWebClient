@@ -4,12 +4,14 @@
 #include "Objects/Object.hpp"
 #include "../MineWebServer/src/Server.hpp"
 #include "Utils/ChunkMap.hpp"
+#include "Utils/TextureManager.hpp"
 #include "Utils/VertexManager.hpp"
 
 namespace Main {
     inline Shader* ourShader;
 
     inline VertexManager* vertexManager;
+    inline TextureManager* textureManager;
 
     inline std::vector<std::shared_ptr<Object>> objects;
     inline std::map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Comparator> chunks;

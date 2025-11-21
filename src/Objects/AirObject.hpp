@@ -8,7 +8,7 @@
 
 class AirObject : public Object {
 public:
-    AirObject(glm::vec3 position, glm::vec3 rotation) : Object(position, rotation, 0) {};
+    AirObject(glm::vec3 position, glm::vec3 rotation) : Object(position, rotation, 0, 0) {};
 
     void render() override {};
     void setposition(glm::vec3 position) override {};
