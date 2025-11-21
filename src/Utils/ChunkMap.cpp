@@ -43,7 +43,7 @@ void ChunkMap::initTranslations() {
     glDeleteBuffers(1, &IVBO);
     glGenBuffers(1, &IVBO);
     glBindBuffer(GL_ARRAY_BUFFER, IVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 512, &translations[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * 512, &translations[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -64,9 +64,9 @@ void ChunkMap::renderChunk() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // for (int i = 0; i < instanceCount; i++) {
-    //     if (translations[i].x == 0.0f && translations[i].y == 0.0f && translations[i].z == 0.0f) {
+    //     // if (translations[i].x == 0.0f && translations[i].y == 0.0f && translations[i].z == 0.0f) {
     //         std::cout << translations[i].x << " " << translations[i].y << " " << translations[i].z << " " << translations[i].w << " " << i << std::endl;
-    //     }
+    //     // }
     // }
 
     glDrawArraysInstanced(GL_TRIANGLES, 0, 36, instanceCount);
