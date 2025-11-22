@@ -8,11 +8,13 @@
 class ChunkMap {
 public:
     std::map<glm::vec3, std::shared_ptr<Object>, vec3Comparator> blocks;
-    glm::vec4 translations[512];
+    glm::mat4 translations[512];
+    float textures[512];
     int instanceCount;
 
     GLuint VAO = 0;
     GLuint IVBO = 0;
+    GLuint TBO = 0;
 
     ChunkMap();
 

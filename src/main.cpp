@@ -16,6 +16,7 @@
 #include "Objects/BlockObject.hpp"
 
 #include "../MineWebServer/src/Server.hpp"
+#include "Objects/EntityObject.hpp"
 #include "Protocol/PacketHelper.hpp"
 #include "Protocol/Socket.hpp"
 #include "Protocol/Packets/AddMapObject.hpp"
@@ -26,46 +27,91 @@
 float vertices[] = {
     // Back face
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // Bottom-left
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-     0.5f, -0.5f, -0.5f,  1.0f, 0.0f, // bottom-right
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
+     0.5f,  0.5f, -0.5f,  0.5f, 0.5f, // top-right
+     0.5f, -0.5f, -0.5f,  0.5f, 0.0f, // bottom-right
+     0.5f,  0.5f, -0.5f,  0.5f, 0.5f, // top-right
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // bottom-left
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
+    -0.5f,  0.5f, -0.5f,  0.0f, 0.5f, // top-left
     // Front face
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
-    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, // top-left
+     0.5f, -0.5f,  0.5f,  0.5f, 0.0f, // bottom-right
+     0.5f,  0.5f,  0.5f,  0.5f, 0.5f, // top-right
+     0.5f,  0.5f,  0.5f,  0.5f, 0.5f, // top-right
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.5f, // top-left
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
     // Left face
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
-    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-left
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
+    -0.5f,  0.5f,  0.5f,  0.5f, 0.0f, // top-right
+    -0.5f,  0.5f, -0.5f,  0.5f, 0.5f, // top-left
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.5f, // bottom-left
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.5f, // bottom-left
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
+    -0.5f,  0.5f,  0.5f,  0.5f, 0.0f, // top-right
     // Right face
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
+     0.5f,  0.5f,  0.5f,  0.5f, 0.0f, // top-left
+     0.5f, -0.5f, -0.5f,  0.0f, 0.5f, // bottom-right
+     0.5f,  0.5f, -0.5f,  0.5f, 0.5f, // top-right
+     0.5f, -0.5f, -0.5f,  0.0f, 0.5f, // bottom-right
+     0.5f,  0.5f,  0.5f,  0.5f, 0.0f, // top-left
      0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
     // Bottom face
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
-     0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // top-left
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.5f, // top-right
+     0.5f, -0.5f, -0.5f,  0.5f, 0.5f, // top-left
+     0.5f, -0.5f,  0.5f,  0.5f, 0.0f, // bottom-left
+     0.5f, -0.5f,  0.5f,  0.5f, 0.0f, // bottom-left
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.5f, // top-right
     // Top face
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
+    -0.5f,  0.5f, -0.5f,  0.0f, 0.5f, // top-left
+     0.5f,  0.5f,  0.5f,  0.5f, 0.0f, // bottom-right
+     0.5f,  0.5f, -0.5f,  0.5f, 0.5f, // top-right
+     0.5f,  0.5f,  0.5f,  0.5f, 0.0f, // bottom-right
+    -0.5f,  0.5f, -0.5f,  0.0f, 0.5f, // top-left
     -0.5f,  0.5f,  0.5f,  0.0f, 0.0f  // bottom-left
+};
+
+float playervertices[] = {
+    // Back face
+    -0.375f, -0.75f, -0.375f,  0.0f, 0.0f, // Bottom-left
+     0.375f,  0.75f, -0.375f,  0.5f, 0.5f, // top-right
+     0.375f, -0.75f, -0.375f,  0.5f, 0.0f, // bottom-right
+     0.375f,  0.75f, -0.375f,  0.5f, 0.5f, // top-right
+    -0.375f, -0.75f, -0.375f,  0.0f, 0.0f, // bottom-left
+    -0.375f,  0.75f, -0.375f,  0.0f, 0.5f, // top-left
+    // Front face
+    -0.375f, -0.75f,  0.375f,  0.0f, 0.0f, // bottom-left
+     0.375f, -0.75f,  0.375f,  0.5f, 0.0f, // bottom-right
+     0.375f,  0.75f,  0.375f,  0.5f, 0.5f, // top-right
+     0.375f,  0.75f,  0.375f,  0.5f, 0.5f, // top-right
+    -0.375f,  0.75f,  0.375f,  0.0f, 0.5f, // top-left
+    -0.375f, -0.75f,  0.375f,  0.0f, 0.0f, // bottom-left
+    // Left face
+    -0.375f,  0.75f,  0.375f,  0.5f, 0.0f, // top-right
+    -0.375f,  0.75f, -0.375f,  0.5f, 0.5f, // top-left
+    -0.375f, -0.75f, -0.375f,  0.0f, 0.5f, // bottom-left
+    -0.375f, -0.75f, -0.375f,  0.0f, 0.5f, // bottom-left
+    -0.375f, -0.75f,  0.375f,  0.0f, 0.0f, // bottom-right
+    -0.375f,  0.75f,  0.375f,  0.5f, 0.0f, // top-right
+    // Right face
+     0.375f,  0.75f,  0.375f,  0.5f, 0.0f, // top-left
+     0.375f, -0.75f, -0.375f,  0.0f, 0.5f, // bottom-right
+     0.375f,  0.75f, -0.375f,  0.5f, 0.5f, // top-right
+     0.375f, -0.75f, -0.375f,  0.0f, 0.5f, // bottom-right
+     0.375f,  0.75f,  0.375f,  0.5f, 0.0f, // top-left
+     0.375f, -0.75f,  0.375f,  0.0f, 0.0f, // bottom-left
+    // Bottom face
+    -0.375f, -0.75f, -0.375f,  0.0f, 0.5f, // top-right
+     0.375f, -0.75f, -0.375f,  0.5f, 0.5f, // top-left
+     0.375f, -0.75f,  0.375f,  0.5f, 0.0f, // bottom-left
+     0.375f, -0.75f,  0.375f,  0.5f, 0.0f, // bottom-left
+    -0.375f, -0.75f,  0.375f,  0.0f, 0.0f, // bottom-right
+    -0.375f, -0.75f, -0.375f,  0.0f, 0.5f, // top-right
+    // Top face
+    -0.375f,  0.75f, -0.375f,  0.0f, 0.5f, // top-left
+     0.375f,  0.75f,  0.375f,  0.5f, 0.0f, // bottom-right
+     0.375f,  0.75f, -0.375f,  0.5f, 0.5f, // top-right
+     0.375f,  0.75f,  0.375f,  0.5f, 0.0f, // bottom-right
+    -0.375f,  0.75f, -0.375f,  0.0f, 0.5f, // top-left
+    -0.375f,  0.75f,  0.375f,  0.0f, 0.0f  // bottom-left
 };
 
 Camera* ourCamera;
@@ -85,6 +131,8 @@ GLuint fragmentShader;
 GLuint shaderProgram;
 
 bool firstMouse = true;
+
+std::shared_ptr<EntityObject> entity;
 
 EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     windowWidth = e->windowInnerWidth;
@@ -152,6 +200,8 @@ void preRender() {
 void render() {
     Main::chunks[glm::vec3(0.0f, 0.0f, 0.0f)]->renderChunk();
 
+    entity->render();
+
     // for (std::shared_ptr<Object>& obj : Main::objects) {
     //     obj->render();
     // }
@@ -203,9 +253,10 @@ int main() {
 
     Main::vertexManager = new VertexManager();
     Main::vertexManager->initVBO(0, vertices, sizeof(vertices));
+    Main::vertexManager->initVBO(1, playervertices, sizeof(playervertices));
 
     Main::textureManager = new TextureManager();
-    Main::textureManager->startInit();
+    Main::textureManager->startInit(32, 32);
     Main::textureManager->addTexture("/assets/textures/stone.png", 1);
     Main::textureManager->addTexture("/assets/textures/dirt.png", 2);
     Main::textureManager->addTexture("/assets/textures/grass.png", 3);
@@ -219,6 +270,8 @@ int main() {
     GenerateChunk pkt;
     pkt.chunkpos = glm::vec3(0.0f, 0.0f, 0.0f);
     SocketClient::sendPacket(&pkt);
+
+    entity = std::make_shared<EntityObject>(glm::vec3(0.0, 0.0f, 0.0), glm::vec3(0.0f, 0.0f, 0.0f), 1, 1);
 
     glfwMakeContextCurrent(window);
     glViewport(0, 0, windowWidth, windowHeight);

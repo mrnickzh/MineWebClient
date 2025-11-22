@@ -9,6 +9,7 @@ class Object {
 public:
     glm::vec3 position;
     glm::vec3 rotation;
+    glm::mat4 model;
     int vboid;
     int texture;
 

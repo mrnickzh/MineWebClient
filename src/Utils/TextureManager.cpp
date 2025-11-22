@@ -5,7 +5,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../../lib/stb/stb_image.hpp"
 
-void TextureManager::startInit() {
+void TextureManager::startInit(int w, int h) {
     textureArray = 0;
     glGenTextures(1, &textureArray);
     glActiveTexture(GL_TEXTURE0);
@@ -14,7 +14,7 @@ void TextureManager::startInit() {
     glTexStorage3D(GL_TEXTURE_2D_ARRAY,
         4,                    //5 mipmaps
         GL_RGB8,               //Internal format
-        16, 16, 64           //width,height
+        w, h, 64           //width,height
     );
 
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

@@ -25,7 +25,7 @@ public:
         vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
-        uniforms = {{"model", 0}, {"view", 0}, {"projection", 0}};
+        uniforms = {{"view", 0}, {"projection", 0}};
 
         try
         {
