@@ -3,6 +3,7 @@
 #include "Shader.hpp"
 #include "Objects/Object.hpp"
 #include "../MineWebServer/src/Server.hpp"
+#include "Entities/Entity.hpp"
 #include "Utils/ChunkMap.hpp"
 #include "Utils/TextureManager.hpp"
 #include "Utils/VertexManager.hpp"
@@ -18,4 +19,6 @@ namespace Main {
 
     inline bool isSingleplayer = false;
     inline Server& serverInstance = Server::getInstance();
+
+    inline std::shared_ptr<Entity> localPlayer;
 }

@@ -27,91 +27,91 @@
 float vertices[] = {
     // Back face
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // Bottom-left
-     0.5f,  0.5f, -0.5f,  0.5f, 0.5f, // top-right
-     0.5f, -0.5f, -0.5f,  0.5f, 0.0f, // bottom-right
-     0.5f,  0.5f, -0.5f,  0.5f, 0.5f, // top-right
+     0.5f,  0.5f, -0.5f,  0.25f, 0.25f, // top-right
+     0.5f, -0.5f, -0.5f,  0.25f, 0.0f, // bottom-right
+     0.5f,  0.5f, -0.5f,  0.25f, 0.25f, // top-right
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // bottom-left
-    -0.5f,  0.5f, -0.5f,  0.0f, 0.5f, // top-left
+    -0.5f,  0.5f, -0.5f,  0.0f, 0.25f, // top-left
     // Front face
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-     0.5f, -0.5f,  0.5f,  0.5f, 0.0f, // bottom-right
-     0.5f,  0.5f,  0.5f,  0.5f, 0.5f, // top-right
-     0.5f,  0.5f,  0.5f,  0.5f, 0.5f, // top-right
-    -0.5f,  0.5f,  0.5f,  0.0f, 0.5f, // top-left
+     0.5f, -0.5f,  0.5f,  0.25f, 0.0f, // bottom-right
+     0.5f,  0.5f,  0.5f,  0.25f, 0.25f, // top-right
+     0.5f,  0.5f,  0.5f,  0.25f, 0.25f, // top-right
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.25f, // top-left
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
     // Left face
-    -0.5f,  0.5f,  0.5f,  0.5f, 0.0f, // top-right
-    -0.5f,  0.5f, -0.5f,  0.5f, 0.5f, // top-left
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.5f, // bottom-left
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.5f, // bottom-left
+    -0.5f,  0.5f,  0.5f,  0.25f, 0.0f, // top-right
+    -0.5f,  0.5f, -0.5f,  0.25f, 0.25f, // top-left
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.25f, // bottom-left
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.25f, // bottom-left
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
-    -0.5f,  0.5f,  0.5f,  0.5f, 0.0f, // top-right
+    -0.5f,  0.5f,  0.5f,  0.25f, 0.0f, // top-right
     // Right face
-     0.5f,  0.5f,  0.5f,  0.5f, 0.0f, // top-left
-     0.5f, -0.5f, -0.5f,  0.0f, 0.5f, // bottom-right
-     0.5f,  0.5f, -0.5f,  0.5f, 0.5f, // top-right
-     0.5f, -0.5f, -0.5f,  0.0f, 0.5f, // bottom-right
-     0.5f,  0.5f,  0.5f,  0.5f, 0.0f, // top-left
+     0.5f,  0.5f,  0.5f,  0.25f, 0.0f, // top-left
+     0.5f, -0.5f, -0.5f,  0.0f, 0.25f, // bottom-right
+     0.5f,  0.5f, -0.5f,  0.25f, 0.25f, // top-right
+     0.5f, -0.5f, -0.5f,  0.0f, 0.25f, // bottom-right
+     0.5f,  0.5f,  0.5f,  0.25f, 0.0f, // top-left
      0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
     // Bottom face
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.5f, // top-right
-     0.5f, -0.5f, -0.5f,  0.5f, 0.5f, // top-left
-     0.5f, -0.5f,  0.5f,  0.5f, 0.0f, // bottom-left
-     0.5f, -0.5f,  0.5f,  0.5f, 0.0f, // bottom-left
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.25f, // top-right
+     0.5f, -0.5f, -0.5f,  0.25f, 0.25f, // top-left
+     0.5f, -0.5f,  0.5f,  0.25f, 0.0f, // bottom-left
+     0.5f, -0.5f,  0.5f,  0.25f, 0.0f, // bottom-left
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.5f, // top-right
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.25f, // top-right
     // Top face
-    -0.5f,  0.5f, -0.5f,  0.0f, 0.5f, // top-left
-     0.5f,  0.5f,  0.5f,  0.5f, 0.0f, // bottom-right
-     0.5f,  0.5f, -0.5f,  0.5f, 0.5f, // top-right
-     0.5f,  0.5f,  0.5f,  0.5f, 0.0f, // bottom-right
-    -0.5f,  0.5f, -0.5f,  0.0f, 0.5f, // top-left
+    -0.5f,  0.5f, -0.5f,  0.0f, 0.25f, // top-left
+     0.5f,  0.5f,  0.5f,  0.25f, 0.0f, // bottom-right
+     0.5f,  0.5f, -0.5f,  0.25f, 0.25f, // top-right
+     0.5f,  0.5f,  0.5f,  0.25f, 0.0f, // bottom-right
+    -0.5f,  0.5f, -0.5f,  0.0f, 0.25f, // top-left
     -0.5f,  0.5f,  0.5f,  0.0f, 0.0f  // bottom-left
 };
 
 float playervertices[] = {
     // Back face
-    -0.375f, -0.75f, -0.375f,  0.0f, 0.0f, // Bottom-left
-     0.375f,  0.75f, -0.375f,  0.5f, 0.5f, // top-right
-     0.375f, -0.75f, -0.375f,  0.5f, 0.0f, // bottom-right
-     0.375f,  0.75f, -0.375f,  0.5f, 0.5f, // top-right
-    -0.375f, -0.75f, -0.375f,  0.0f, 0.0f, // bottom-left
-    -0.375f,  0.75f, -0.375f,  0.0f, 0.5f, // top-left
+    -0.25f, -0.75f, -0.25f,  0.0f, 0.0f, // Bottom-left
+     0.25f,  0.75f, -0.25f,  0.25f, 0.375f, // top-right
+     0.25f, -0.75f, -0.25f,  0.25f, 0.0f, // bottom-right
+     0.25f,  0.75f, -0.25f,  0.25f, 0.375f, // top-right
+    -0.25f, -0.75f, -0.25f,  0.0f, 0.0f, // bottom-left
+    -0.25f,  0.75f, -0.25f,  0.0f, 0.375f, // top-left
     // Front face
-    -0.375f, -0.75f,  0.375f,  0.0f, 0.0f, // bottom-left
-     0.375f, -0.75f,  0.375f,  0.5f, 0.0f, // bottom-right
-     0.375f,  0.75f,  0.375f,  0.5f, 0.5f, // top-right
-     0.375f,  0.75f,  0.375f,  0.5f, 0.5f, // top-right
-    -0.375f,  0.75f,  0.375f,  0.0f, 0.5f, // top-left
-    -0.375f, -0.75f,  0.375f,  0.0f, 0.0f, // bottom-left
+    -0.25f, -0.75f,  0.25f,  0.0f, 0.0f, // bottom-left
+     0.25f, -0.75f,  0.25f,  0.25f, 0.0f, // bottom-right
+     0.25f,  0.75f,  0.25f,  0.25f, 0.375f, // top-right
+     0.25f,  0.75f,  0.25f,  0.25f, 0.375f, // top-right
+    -0.25f,  0.75f,  0.25f,  0.0f, 0.375f, // top-left
+    -0.25f, -0.75f,  0.25f,  0.0f, 0.0f, // bottom-left
     // Left face
-    -0.375f,  0.75f,  0.375f,  0.5f, 0.0f, // top-right
-    -0.375f,  0.75f, -0.375f,  0.5f, 0.5f, // top-left
-    -0.375f, -0.75f, -0.375f,  0.0f, 0.5f, // bottom-left
-    -0.375f, -0.75f, -0.375f,  0.0f, 0.5f, // bottom-left
-    -0.375f, -0.75f,  0.375f,  0.0f, 0.0f, // bottom-right
-    -0.375f,  0.75f,  0.375f,  0.5f, 0.0f, // top-right
+    -0.25f,  0.75f,  0.25f,  0.0f, 0.0f, // top-right
+    -0.25f,  0.75f, -0.25f,  0.25f, 0.0f, // top-left
+    -0.25f, -0.75f, -0.25f,  0.25f, 0.375f, // bottom-left
+    -0.25f, -0.75f, -0.25f,  0.25f, 0.375f, // bottom-left
+    -0.25f, -0.75f,  0.25f,  0.0f, 0.375f, // bottom-right
+    -0.25f,  0.75f,  0.25f,  0.0f, 0.0f, // top-right
     // Right face
-     0.375f,  0.75f,  0.375f,  0.5f, 0.0f, // top-left
-     0.375f, -0.75f, -0.375f,  0.0f, 0.5f, // bottom-right
-     0.375f,  0.75f, -0.375f,  0.5f, 0.5f, // top-right
-     0.375f, -0.75f, -0.375f,  0.0f, 0.5f, // bottom-right
-     0.375f,  0.75f,  0.375f,  0.5f, 0.0f, // top-left
-     0.375f, -0.75f,  0.375f,  0.0f, 0.0f, // bottom-left
+     0.25f,  0.75f,  0.25f,  0.25f, 0.0f, // top-left
+     0.25f, -0.75f, -0.25f,  0.5f, 0.375f, // bottom-right
+     0.25f,  0.75f, -0.25f,  0.5f, 0.0f, // top-right
+     0.25f, -0.75f, -0.25f,  0.5f, 0.375f, // bottom-right
+     0.25f,  0.75f,  0.25f,  0.25f, 0.0f, // top-left
+     0.25f, -0.75f,  0.25f,  0.25f, 0.375f, // bottom-left
     // Bottom face
-    -0.375f, -0.75f, -0.375f,  0.0f, 0.5f, // top-right
-     0.375f, -0.75f, -0.375f,  0.5f, 0.5f, // top-left
-     0.375f, -0.75f,  0.375f,  0.5f, 0.0f, // bottom-left
-     0.375f, -0.75f,  0.375f,  0.5f, 0.0f, // bottom-left
-    -0.375f, -0.75f,  0.375f,  0.0f, 0.0f, // bottom-right
-    -0.375f, -0.75f, -0.375f,  0.0f, 0.5f, // top-right
+    -0.25f, -0.75f, -0.25f,  0.5f, 0.25f, // top-right
+     0.25f, -0.75f, -0.25f,  0.75f, 0.25f, // top-left
+     0.25f, -0.75f,  0.25f,  0.75f, 0.0f, // bottom-left
+     0.25f, -0.75f,  0.25f,  0.75f, 0.0f, // bottom-left
+    -0.25f, -0.75f,  0.25f,  0.5f, 0.0f, // bottom-right
+    -0.25f, -0.75f, -0.25f,  0.5f, 0.25f, // top-right
     // Top face
-    -0.375f,  0.75f, -0.375f,  0.0f, 0.5f, // top-left
-     0.375f,  0.75f,  0.375f,  0.5f, 0.0f, // bottom-right
-     0.375f,  0.75f, -0.375f,  0.5f, 0.5f, // top-right
-     0.375f,  0.75f,  0.375f,  0.5f, 0.0f, // bottom-right
-    -0.375f,  0.75f, -0.375f,  0.0f, 0.5f, // top-left
-    -0.375f,  0.75f,  0.375f,  0.0f, 0.0f  // bottom-left
+    -0.25f,  0.75f, -0.25f,  0.5f, 0.25f, // top-left
+     0.25f,  0.75f,  0.25f,  0.75f, 0.0f, // bottom-right
+     0.25f,  0.75f, -0.25f,  0.75f, 0.25f, // top-right
+     0.25f,  0.75f,  0.25f,  0.75f, 0.0f, // bottom-right
+    -0.25f,  0.75f, -0.25f,  0.5f, 0.25f, // top-left
+    -0.25f,  0.75f,  0.25f,  0.5f, 0.0f  // bottom-left
 };
 
 Camera* ourCamera;
@@ -131,8 +131,7 @@ GLuint fragmentShader;
 GLuint shaderProgram;
 
 bool firstMouse = true;
-
-std::shared_ptr<EntityObject> entity;
+bool freeCamLock = false;
 
 EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     windowWidth = e->windowInnerWidth;
@@ -145,16 +144,43 @@ EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
 
 void processInput(GLFWwindow *window)
 {
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        ourCamera->ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        ourCamera->ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        ourCamera->ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        ourCamera->ProcessKeyboard(RIGHT, deltaTime);
+    glm::vec3 position = Main::localPlayer->object->position;
+    glm::vec3 rotation = Main::localPlayer->object->rotation;
+    if (!ourCamera->freeCam) {
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            Main::localPlayer->object->setposition(position + (glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Front));
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            Main::localPlayer->object->setposition(position + glm::vec3(-1.0f * deltaTime, 0.0f, -1.0f * deltaTime) * ourCamera->Front);
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            Main::localPlayer->object->setposition(position + glm::vec3(-1.0f * deltaTime, 0.0f, -1.0f * deltaTime) * ourCamera->Right);
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            Main::localPlayer->object->setposition(position + glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Right);
+        ourCamera->updateCameraPosition();
+    }
+    else {
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            ourCamera->Position += glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Front;
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            ourCamera->Position += glm::vec3(-1.0f * deltaTime, 0.0f, -1.0f * deltaTime) * ourCamera->Front;
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            ourCamera->Position += glm::vec3(-1.0f * deltaTime, 0.0f, -1.0f * deltaTime) * ourCamera->Right;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            ourCamera->Position += glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Right;
+        ourCamera->updateCameraVectors();
+    }
+
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
         emscripten_request_pointerlock("canvas", EM_TRUE);
+
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && !freeCamLock) {
+        ourCamera->freeCam = !ourCamera->freeCam;
+        ourCamera->Yaw = rotation.y;
+        ourCamera->updateCameraPosition();
+        freeCamLock = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_RELEASE && freeCamLock) {
+        freeCamLock = false;
+    }
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
@@ -198,9 +224,12 @@ void preRender() {
 }
 
 void render() {
-    Main::chunks[glm::vec3(0.0f, 0.0f, 0.0f)]->renderChunk();
+    Main::chunks[glm::vec3(0.0f, -1.0f, 0.0f)]->renderChunk();
 
-    entity->render();
+    Main::localPlayer->object->render();
+
+    // std::cout << "rot: " << Main::localPlayer->object->rotation.y << std::endl;
+    // std::cout << "yaw: " << ourCamera->Yaw << std::endl;
 
     // for (std::shared_ptr<Object>& obj : Main::objects) {
     //     obj->render();
@@ -249,17 +278,22 @@ int main() {
     glEnable(GL_CULL_FACE);
 
     Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl");
-    ourCamera = new Camera();
 
     Main::vertexManager = new VertexManager();
     Main::vertexManager->initVBO(0, vertices, sizeof(vertices));
     Main::vertexManager->initVBO(1, playervertices, sizeof(playervertices));
 
     Main::textureManager = new TextureManager();
-    Main::textureManager->startInit(32, 32);
+    Main::textureManager->startInit(64, 64, 64);
+
+    // blocks
     Main::textureManager->addTexture("/assets/textures/stone.png", 1);
     Main::textureManager->addTexture("/assets/textures/dirt.png", 2);
     Main::textureManager->addTexture("/assets/textures/grass.png", 3);
+
+    //entities
+    Main::textureManager->addTexture("/assets/textures/player.png", 49);
+
     Main::textureManager->endInit();
 
     Main::isSingleplayer = true;
@@ -268,10 +302,14 @@ int main() {
     // SocketClient::connect();
 
     GenerateChunk pkt;
-    pkt.chunkpos = glm::vec3(0.0f, 0.0f, 0.0f);
+    pkt.chunkpos = glm::vec3(0.0f, -1.0f, 0.0f);
     SocketClient::sendPacket(&pkt);
 
-    entity = std::make_shared<EntityObject>(glm::vec3(0.0, 0.0f, 0.0), glm::vec3(0.0f, 0.0f, 0.0f), 1, 1);
+    Main::localPlayer = std::make_shared<Entity>();
+    Main::localPlayer->uuid = "local";
+    Main::localPlayer->object = std::make_shared<EntityObject>(glm::vec3(0.0, 0.0f, 0.0), glm::vec3(0.0f, 0.0f, 0.0f), 1, 49);
+
+    ourCamera = new Camera(Main::localPlayer);
 
     glfwMakeContextCurrent(window);
     glViewport(0, 0, windowWidth, windowHeight);

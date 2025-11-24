@@ -7,9 +7,7 @@
 
 EntityObject::EntityObject(glm::vec3 position, glm::vec3 rotation, int vboid, int tid) : Object(position, rotation, vboid, tid) {
     model = glm::translate(glm::mat4(1.0f), position);
-    model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    model *= glm::mat4_cast(glm::quat(glm::radians(-rotation)));
 
     ftexture = (float)texture;
 
@@ -39,6 +37,7 @@ void EntityObject::render() {
     glBindBuffer(GL_ARRAY_BUFFER, TBO);
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
+    glVertexAttribDivisor(2, 1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, IVBO);
@@ -71,17 +70,37 @@ void EntityObject::setposition(glm::vec3 pos) {
     position = pos;
 
     model = glm::translate(glm::mat4(1.0f), position);
-    model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    model *= glm::mat4_cast(glm::quat(glm::radians(-rotation)));
+
+    glDeleteBuffers(1, &IVBO);
+    glGenBuffers(1, &IVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, IVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4), glm::value_ptr(model), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glDeleteBuffers(1, &TBO);
+    glGenBuffers(1, &TBO);
+    glBindBuffer(GL_ARRAY_BUFFER, TBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float), &ftexture, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void EntityObject::setrotation(glm::vec3 rot) {
     rotation = rot;
 
     model = glm::translate(glm::mat4(1.0f), position);
-    model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    model *= glm::mat4_cast(glm::quat(glm::radians(-rotation)));
+
+    glDeleteBuffers(1, &IVBO);
+    glGenBuffers(1, &IVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, IVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4), glm::value_ptr(model), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glDeleteBuffers(1, &TBO);
+    glGenBuffers(1, &TBO);
+    glBindBuffer(GL_ARRAY_BUFFER, TBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float), &ftexture, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
