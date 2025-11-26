@@ -41,7 +41,8 @@ std::vector<std::shared_ptr<Object>> PhysicsEngine::possibleObstacles(glm::vec3 
     currentChunkBlock.x += (currentChunk.x < 0.0f ? (currentChunkBlock.x == 0.0f ? 0.0f : 8.0f) : 0.0f);
     currentChunkBlock.y += (currentChunk.y < 0.0f ? (currentChunkBlock.y == 0.0f ? 0.0f : 8.0f) : 0.0f);
     currentChunkBlock.z += (currentChunk.z < 0.0f ? (currentChunkBlock.z == 0.0f ? 0.0f : 8.0f) : 0.0f);
-    // std::cout << "==========" << std::endl;
+    // std::cout << currentChunkBlock.x << " " << currentChunkBlock.y << " " << currentChunkBlock.z << std::endl;
+    // std::cout << "=====BEGIN=====" << std::endl;
     for (int i = (int)currentChunkBlock.x - 1; i <= (int)currentChunkBlock.x + 1; i++) {
         glm::vec3 collisionChunkX = currentChunk;
         glm::vec3 collisionChunkBlockX = currentChunkBlock;
@@ -61,12 +62,12 @@ std::vector<std::shared_ptr<Object>> PhysicsEngine::possibleObstacles(glm::vec3 
                 if (k < 0) { collisionChunkZ.z -= 1.0f; collisionChunkBlockZ.z = 7.0f; }
                 if (k > 7) { collisionChunkZ.z += 1.0f; collisionChunkBlockZ.z = 0.0f; }
                 if ((*chunkmap).find(collisionChunkZ) == (*chunkmap).end()) { return obstacles; }
-                // std::cout << i << " " << j << " " << position.x << " " << position.y << " " << collisionChunkY.x << " " << collisionChunkY.y << " " << collisionChunkBlockY.x << " " << collisionChunkBlockY.y << " " << (*chunkmap)[collisionChunkY]->getBlock(collisionChunkBlockY)->position.x << " " << (*chunkmap)[collisionChunkY]->getBlock(collisionChunkBlockY)->position.y << " " << (*chunkmap)[collisionChunkY]->getBlock(collisionChunkBlockY)->canCollide << std::endl;
                 obstacles.push_back((*chunkmap)[collisionChunkZ]->getBlock(collisionChunkBlockZ));
-                // std::cout << collisionChunk.x << ", " << collisionChunk.y << ", " << collisionChunkBlock.x << ", " << collisionChunkBlock.y << ", " << i << ", " << j << std::endl;
+                // std::cout << collisionChunkZ.x << ", " << collisionChunkZ.y << ", " << collisionChunkZ.z << ", " << collisionChunkBlockZ.x << ", " << collisionChunkBlockZ.y << ", " << collisionChunkBlockZ.z << std::endl;
             }
         }
     }
+    // std::cout << "=====END=====" << std::endl;
     return obstacles;
 }
 
@@ -86,13 +87,13 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject>& obj) {
     float inertiaAdjusted = 0.002f * obj->mass;
     float gravityAdjusted = 0.002f * obj->mass;
 
-    float rate = (std::abs(vel.x) + std::abs(vel.z)) / 2.0f;
+    float rate = (std::abs(vel.x) + std::abs(vel.z));
     if (rate == 0.0f) {
         rate = 1.0f;
     }
 
-    // std::cout << (inertiaAdjusted * (std::abs(vel.x) / rate)) << " x" << std::endl;
-    // std::cout << (inertiaAdjusted * (std::abs(vel.z) / rate)) << " z" << std::endl;
+    // std::cout << vel.x << " " << (inertiaAdjusted * (std::abs(vel.x) / rate)) << " " << (std::abs(vel.x) / rate) << " x" << std::endl;
+    // std::cout << vel.z << " " << (inertiaAdjusted * (std::abs(vel.z) / rate)) << " " << (std::abs(vel.z) / rate) << " z" << std::endl;
 
     if (vel.x < 0) { vel.x += (inertiaAdjusted * (std::abs(vel.x) / rate)); }
     if (vel.x > 0) { vel.x -= (inertiaAdjusted * (std::abs(vel.x) / rate)); }
@@ -107,6 +108,16 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject>& obj) {
         if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y, pos.z), obj->getCollider(), obstacle)) { XCollision = true; }
         if (possibleCollision(glm::vec3(pos.x, pos.y, pos.z + vel.z), obj->getCollider(), obstacle)) { ZCollision = true; }
         if (possibleCollision(glm::vec3(pos.x, pos.y + vel.y, pos.z), obj->getCollider(), obstacle)) { YCollision = true; }
+    }
+
+    if (XCollision) { vel.x = 0.0f; }
+    if (YCollision) { vel.y = 0.0f; }
+    if (ZCollision) { vel.z = 0.0f; }
+
+    for (auto obstacle : obstacles) {
+        if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y, pos.z + vel.z), obj->getCollider(), obstacle)) { XCollision = true; ZCollision = true; }
+        if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y + vel.y, pos.z), obj->getCollider(), obstacle)) { XCollision = true; YCollision = true; }
+        if (possibleCollision(glm::vec3(pos.x, pos.y + vel.y, pos.z + vel.z), obj->getCollider(), obstacle)) { YCollision = true; ZCollision = true; }
     }
 
     if (!XCollision) { pos.x += vel.x; }
@@ -164,18 +175,22 @@ void PhysicsEngine::addVelocityClampedRotation(std::shared_ptr<Object> object, g
         // std::cout << velocity.z * std::cos(rotation.y) * std::cos(rotation.z) << " zz" << std::endl;
         // std::cout << velocity.x * std::sin(rotation.y) * std::cos(rotation.z) << " zx" << std::endl;
 
-        glm::vec3 real_limit = glm::vec3(0.0f, 0.0f, 0.0f);
-        real_limit.x = (limit.x * std::cos(rotation.y) * std::cos(rotation.z)) + (limit.z * -std::sin(rotation.y) * std::cos(rotation.z));
-        real_limit.y = limit.y * std::sin(rotation.z);
-        real_limit.z = (limit.x * std::sin(rotation.y) * std::cos(rotation.z)) + (limit.z * std::cos(rotation.y) * std::cos(rotation.z));
-
         glm::vec3 real_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
-        real_velocity.x = std::clamp((velocity.x * std::cos(rotation.y) * std::cos(rotation.z)) + (velocity.z * -std::sin(rotation.y) * std::cos(rotation.z)), -std::abs(real_limit.z), std::abs(real_limit.x));
-        real_velocity.y = std::clamp(velocity.y * std::sin(rotation.z), real_limit.y, real_limit.y);
-        real_velocity.z = std::clamp((velocity.x * std::sin(rotation.y) * std::cos(rotation.z)) + (velocity.z * std::cos(rotation.y) * std::cos(rotation.z)), -std::abs(real_limit.z), std::abs(real_limit.z));
+        real_velocity.x = (velocity.x * std::cos(rotation.y) * std::cos(rotation.z)) + (velocity.z * -std::sin(rotation.y) * std::cos(rotation.z));
+        real_velocity.y = velocity.y * std::sin(rotation.z);
+        real_velocity.z = (velocity.x * std::sin(rotation.y) * std::cos(rotation.z)) + (velocity.z * std::cos(rotation.y) * std::cos(rotation.z));
+
+        float rate = (std::abs(real_velocity.x) + std::abs(real_velocity.z));
+        float limitX = limit.x * (std::abs(real_velocity.x) / rate);
+        float limitZ = limit.z * (std::abs(real_velocity.z) / rate);
+        float limitY = limit.y * std::sin(rotation.z);
+
+        real_velocity.x = std::clamp(real_velocity.x, -std::abs(limitX), std::abs(limitX));
+        real_velocity.y = std::clamp(real_velocity.y, -std::abs(limitY), std::abs(limitY));
+        real_velocity.z = std::clamp(real_velocity.z, -std::abs(limitZ), std::abs(limitZ));
 
         // std::cout << "=====" << std::endl;
-        // std::cout << real_limit.x << " " << real_limit.y << " " << real_limit.z << std::endl;
+        // std::cout << limitX << " " << limitZ << std::endl;
         // std::cout << (velocity.x * std::cos(rotation.y) * std::cos(rotation.z)) + (velocity.z * std::sin(rotation.y) * std::cos(rotation.z)) << " " << (velocity.x * std::sin(rotation.y) * std::cos(rotation.z)) + (velocity.z * std::cos(rotation.y) * std::cos(rotation.z)) << std::endl;
         // std::cout << real_velocity.x << " " << real_velocity.z << std::endl;
 

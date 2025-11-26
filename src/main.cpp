@@ -126,7 +126,7 @@ int windowHeight = 600;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-float maxH = 0.01f;
+float maxH = 0.005f;
 
 float lastX = 400, lastY = 300;
 
@@ -277,6 +277,10 @@ void render() {
     }
 
     Main::localPlayer->object->render();
+
+    // AABB kek = GetAABB::CP2AABB(Main::chunks[glm::vec3(0.0f, -1.0f, 0.0f)]->getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->collider, Main::chunks[glm::vec3(0.0f, -1.0f, 0.0f)]->getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->position);
+    // std::cout << kek.AA.x << " " << kek.AA.y << " " << kek.AA.z << std::endl;
+    // std::cout << kek.BB.x << " " << kek.BB.y << " " << kek.BB.z << std::endl;
 
     // std::cout << "rot: " << Main::localPlayer->object->rotation.y << std::endl;
     // std::cout << "yaw: " << ourCamera->Yaw << std::endl;
