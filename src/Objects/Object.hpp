@@ -12,8 +12,10 @@ public:
     glm::mat4 model;
     int vboid;
     int texture;
+    bool cancollide;
+    glm::vec3 collider;
 
-    Object(glm::vec3 position, glm::vec3 rotation, int vboid, int texture) : position(position), rotation(rotation), vboid(vboid), texture(texture) {};
+    Object(glm::vec3 position, glm::vec3 rotation, int vboid, int texture, bool cancollide, glm::vec3 collider) : position(position), rotation(rotation), vboid(vboid), texture(texture), cancollide(cancollide), collider(collider) {};
 
     virtual void render() {}
     virtual void setposition(glm::vec3 position) {}

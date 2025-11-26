@@ -36,7 +36,7 @@ public:
     glm::vec3 offset = glm::vec3(0.0f, 0.25f, 0.0f);
 
     // constructor with vectors
-    Camera(std::shared_ptr<Entity> targetEntity) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
+    Camera(std::shared_ptr<Entity> targetEntity) : Front(glm::vec3(1.0f, 0.0f, 0.0f)), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
     {
         Position = glm::vec3(0.0f, 0.0f, 0.0f);
         WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);

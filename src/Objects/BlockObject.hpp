@@ -11,7 +11,7 @@
 class BlockObject : public Object {
 public:
 
-    BlockObject(glm::vec3 position, glm::vec3 rotation, int vboid, int tid);
+    BlockObject(glm::vec3 position, glm::vec3 rotation, int vboid, int tid, bool cancollide, glm::vec3 collider);
 
     void render() override;
     void setposition(glm::vec3 position) override;

@@ -5,7 +5,7 @@
 #include "../Shader.hpp"
 #include "../Utils/VertexManager.hpp"
 
-EntityObject::EntityObject(glm::vec3 position, glm::vec3 rotation, int vboid, int tid) : Object(position, rotation, vboid, tid) {
+EntityObject::EntityObject(glm::vec3 position, glm::vec3 rotation, int vboid, int tid, bool cancollide, glm::vec3 collider) : Object(position, rotation, vboid, tid, cancollide, collider) {
     model = glm::translate(glm::mat4(1.0f), position);
     model *= glm::mat4_cast(glm::quat(glm::radians(-rotation)));
 

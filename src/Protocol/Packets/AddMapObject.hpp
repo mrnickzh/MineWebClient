@@ -28,13 +28,13 @@ class AddMapObject : public Packet {
                 Main::objects.push_back(std::make_shared<AirObject>(position, rotation));
                 break;
             case 1:
-                Main::objects.push_back(std::make_shared<BlockObject>(position, rotation, 0, 1));
+                Main::objects.push_back(std::make_shared<BlockObject>(position, rotation, 0, 1, true, glm::vec3(0.5f, 0.5f, 0.5f)));
                 break;
             case 2:
-                Main::objects.push_back(std::make_shared<BlockObject>(position, rotation, 0, 2));
+                Main::objects.push_back(std::make_shared<BlockObject>(position, rotation, 0, 2, true, glm::vec3(0.5f, 0.5f, 0.5f)));
                 break;
             case 3:
-                Main::objects.push_back(std::make_shared<BlockObject>(position, rotation, 0, 3));
+                Main::objects.push_back(std::make_shared<BlockObject>(position, rotation, 0, 3, true, glm::vec3(0.5f, 0.5f, 0.5f)));
                 break;
         }
     }
