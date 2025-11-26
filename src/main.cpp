@@ -126,7 +126,7 @@ int windowHeight = 600;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-float maxH = 0.005f;
+float maxH = 0.05f;
 
 float lastX = 400, lastY = 300;
 
@@ -168,14 +168,16 @@ void processInput(GLFWwindow *window)
 {
     glm::vec3 rotation = Main::localPlayer->object->rotation;
     if (!ourCamera->freeCam) {
+        glm::vec3 totalvelocity = glm::vec3(0.0f, 0.0f, 0.0f);
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, glm::vec3(0.0025f, 0.0f, 0.0f), glm::vec3(maxH, 0.0f, maxH));
+            totalvelocity += glm::vec3(0.0025f, 0.0f, 0.0f);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, glm::vec3(-0.0025f, 0.0f, 0.0f), glm::vec3(maxH, 0.0f, maxH));
+            totalvelocity += glm::vec3(-0.0025f, 0.0f, 0.0f);
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, glm::vec3(0.0f, 0.0f, -0.0025f), glm::vec3(maxH, 0.0f, maxH));
+            totalvelocity += glm::vec3(0.0f, 0.0f, -0.0025f);
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, glm::vec3(0.0f, 0.0f, 0.0025f), glm::vec3(maxH, 0.0f, maxH));
+            totalvelocity += glm::vec3(0.0f, 0.0f, 0.0025f);
+        Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, totalvelocity, glm::vec3(maxH, 0.1f, maxH));
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && Main::physicsEngine->isOnFoot(Main::localPlayer->object)) {
             Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3(0.0f, 0.1f, 0.0f));
         }

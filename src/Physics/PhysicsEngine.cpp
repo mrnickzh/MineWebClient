@@ -183,18 +183,18 @@ void PhysicsEngine::addVelocityClampedRotation(std::shared_ptr<Object> object, g
         float rate = (std::abs(real_velocity.x) + std::abs(real_velocity.z));
         float limitX = limit.x * (std::abs(real_velocity.x) / rate);
         float limitZ = limit.z * (std::abs(real_velocity.z) / rate);
-        float limitY = limit.y * std::sin(rotation.z);
+        float limitY = limit.y;
 
-        real_velocity.x = std::clamp(real_velocity.x, -std::abs(limitX), std::abs(limitX));
-        real_velocity.y = std::clamp(real_velocity.y, -std::abs(limitY), std::abs(limitY));
-        real_velocity.z = std::clamp(real_velocity.z, -std::abs(limitZ), std::abs(limitZ));
+        real_velocity.x = std::clamp(it->get()->velocity.x + real_velocity.x, -std::abs(limitX), std::abs(limitX));
+        real_velocity.y = std::clamp(it->get()->velocity.y + real_velocity.y, -std::abs(limitY), std::abs(limitY));
+        real_velocity.z = std::clamp(it->get()->velocity.z + real_velocity.z, -std::abs(limitZ), std::abs(limitZ));
 
         // std::cout << "=====" << std::endl;
         // std::cout << limitX << " " << limitZ << std::endl;
         // std::cout << (velocity.x * std::cos(rotation.y) * std::cos(rotation.z)) + (velocity.z * std::sin(rotation.y) * std::cos(rotation.z)) << " " << (velocity.x * std::sin(rotation.y) * std::cos(rotation.z)) + (velocity.z * std::cos(rotation.y) * std::cos(rotation.z)) << std::endl;
-        // std::cout << real_velocity.x << " " << real_velocity.z << std::endl;
+        // std::cout << real_velocity.x << " " << real_velocity.y << " " << real_velocity.z << std::endl;
 
-        it->get()->velocity = glm::vec3(it->get()->velocity.x + real_velocity.x, it->get()->velocity.y + real_velocity.y, it->get()->velocity.z + real_velocity.z);
+        it->get()->velocity = glm::vec3(real_velocity.x, real_velocity.y, real_velocity.z);
     }}
 
 void PhysicsEngine::setVelocity(std::shared_ptr<Object> object, glm::vec3 velocity) {
