@@ -12,7 +12,7 @@ file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "src/*.hpp")
 file(GLOB_RECURSE LIB_FILES "lib/*.cpp" "lib/*.hpp" "lib/*.h")
 add_executable(MineWebClient ${SOURCE_FILES} ${LIB_FILES})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pthread")
 
 target_link_options(MineWebClient PRIVATE
         "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/src/payload.html"
@@ -27,6 +27,9 @@ target_link_options(MineWebClient PRIVATE
         "SHELL:-s USE_GLFW=3"
         "SHELL:-s STB_IMAGE=1"
         "SHELL:-s FORCE_FILESYSTEM=1"
+        "SHELL:-s USE_PTHREADS=1"
+        "SHELL:-s ENVIRONMENT=web,worker"
+        "SHELL:-s PTHREAD_POOL_SIZE=4"
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/assets@/assets"
 )
 

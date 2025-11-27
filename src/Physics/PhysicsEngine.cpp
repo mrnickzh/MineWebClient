@@ -47,20 +47,20 @@ std::vector<std::shared_ptr<Object>> PhysicsEngine::possibleObstacles(glm::vec3 
         glm::vec3 collisionChunkX = currentChunk;
         glm::vec3 collisionChunkBlockX = currentChunkBlock;
         collisionChunkBlockX.x = (float)i;
-        if (i < 0) { collisionChunkX.x -= 1.0f; collisionChunkBlockX.x = 7.0f; }
-        if (i > 7) { collisionChunkX.x += 1.0f; collisionChunkBlockX.x = 0.0f; }
-        for (int j = (int)currentChunkBlock.y - 1; j <= (int)currentChunkBlock.y + 1; j++) {
+        if (i < 0) { collisionChunkX.x -= 1.0f; collisionChunkBlockX.x += 8.0f; }
+        if (i > 7) { collisionChunkX.x += 1.0f; collisionChunkBlockX.x -= 8.0f; }
+        for (int j = (int)currentChunkBlock.y - 1; j <= (int)currentChunkBlock.y + 2; j++) {
             glm::vec3 collisionChunkY = collisionChunkX;
             glm::vec3 collisionChunkBlockY = collisionChunkBlockX;
             collisionChunkBlockY.y = (float)j;
-            if (j < 0) { collisionChunkY.y -= 1.0f; collisionChunkBlockY.y = 7.0f; }
-            if (j > 7) { collisionChunkY.y += 1.0f; collisionChunkBlockY.y = 0.0f; }
+            if (j < 0) { collisionChunkY.y -= 1.0f; collisionChunkBlockY.y += 8.0f; }
+            if (j > 7) { collisionChunkY.y += 1.0f; collisionChunkBlockY.y -= 8.0f; }
             for (int k = (int)currentChunkBlock.z - 1; k <= (int)currentChunkBlock.z + 1; k++) {
                 glm::vec3 collisionChunkZ = collisionChunkY;
                 glm::vec3 collisionChunkBlockZ = collisionChunkBlockY;
                 collisionChunkBlockZ.z = (float)k;
-                if (k < 0) { collisionChunkZ.z -= 1.0f; collisionChunkBlockZ.z = 7.0f; }
-                if (k > 7) { collisionChunkZ.z += 1.0f; collisionChunkBlockZ.z = 0.0f; }
+                if (k < 0) { collisionChunkZ.z -= 1.0f; collisionChunkBlockZ.z += 8.0f; }
+                if (k > 7) { collisionChunkZ.z += 1.0f; collisionChunkBlockZ.z -= 8.0f; }
                 if ((*chunkmap).find(collisionChunkZ) == (*chunkmap).end()) { return obstacles; }
                 obstacles.push_back((*chunkmap)[collisionChunkZ]->getBlock(collisionChunkBlockZ));
                 // std::cout << collisionChunkZ.x << ", " << collisionChunkZ.y << ", " << collisionChunkZ.z << ", " << collisionChunkBlockZ.x << ", " << collisionChunkBlockZ.y << ", " << collisionChunkBlockZ.z << std::endl;
@@ -82,7 +82,7 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject>& obj) {
     bool ZCollision = false;
 
     std::vector<std::shared_ptr<Object>> obstacles = possibleObstacles(pos);
-    if (obstacles.size() < 27) { std::cout << obstacles.size() << std::endl; return; }
+    if (obstacles.size() < 36) { std::cout << obstacles.size() << std::endl; return; }
 
     float inertiaAdjusted = 0.002f * obj->mass;
     float gravityAdjusted = 0.002f * obj->mass;

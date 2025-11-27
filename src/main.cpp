@@ -3,6 +3,7 @@
 #include <emscripten/html5.h>
 #include <GLES3/gl3.h>
 #include <GLFW/glfw3.h>
+#include <thread>
 
 #include "main.hpp"
 
@@ -137,23 +138,23 @@ GLuint shaderProgram;
 bool firstMouse = true;
 bool freeCamLock = false;
 
-int tps = 60;
-int mps = 1000 / tps;
-long long ltt = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-
-void do_tick() {
-    long long now = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    long long elapsed = now - ltt;
-
-    if (elapsed >= mps) {
-        int ticksToRun = (int) (elapsed / mps);
-        for (int i = 0; i < ticksToRun; i++) {
-            TickEvent event;
-            EventBus::getInstance().publish(&event);
-        }
-        ltt = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    }
-}
+// int tps = 60;
+// int mps = 1000 / tps;
+// long long ltt = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+//
+// void do_tick() {
+//     long long now = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+//     long long elapsed = now - ltt;
+//
+//     if (elapsed >= mps) {
+//         int ticksToRun = (int) (elapsed / mps);
+//         for (int i = 0; i < ticksToRun; i++) {
+//             TickEvent event;
+//             EventBus::getInstance().publish(&event);
+//         }
+//         ltt = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+//     }
+// }
 
 EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     windowWidth = e->windowInnerWidth;
@@ -234,7 +235,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void preRender() {
-    do_tick();
+    // do_tick();
     glClearColor(0.53f, 0.81f, 0.98f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -309,6 +310,8 @@ void mainLoop() {
 }
 
 int main() {
+    bool ticklooprunning = true;
+
     emscripten_get_canvas_element_size("#canvas", &windowWidth, &windowHeight);
     emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, onResize);
 
@@ -371,15 +374,41 @@ int main() {
 
     Main::localPlayer = std::make_shared<Entity>();
     Main::localPlayer->uuid = "local";
-    Main::localPlayer->object = std::make_shared<EntityObject>(glm::vec3(0.0, 1.0f, 0.0), glm::vec3(0.0f, 0.0f, 0.0f), 1, 49, true, glm::vec3(0.375f, 0.75f, 0.375f));
+    Main::localPlayer->object = std::make_shared<EntityObject>(glm::vec3(0.0, 1.0f, 0.0), glm::vec3(0.0f, 0.0f, 0.0f), 1, 49, true, glm::vec3(0.25f, 0.75f, 0.25f));
 
     Main::physicsEngine->registerObject(Main::localPlayer->object, 1.0f);
 
     ourCamera = new Camera(Main::localPlayer);
 
+    std::thread tick([&]() {
+        int tps = 60;
+        int mps = 1000 / tps;
+        long long ltt = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        while (ticklooprunning) {
+            long long now = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            long long elapsed = now - ltt;
+
+            if (elapsed >= mps) {
+                int ticksToRun = (int) (elapsed / mps);
+                ltt += ticksToRun * mps;
+
+                for (int i = 0; i < ticksToRun; i++) {
+                    TickEvent event;
+                    EventBus::getInstance().publish(&event);
+                }
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+         }
+    });
+
     glfwMakeContextCurrent(window);
     glViewport(0, 0, windowWidth, windowHeight);
+
     emscripten_set_main_loop(&mainLoop, 0, 1);
+
+    ticklooprunning = false;
+    tick.join();
 
     glfwDestroyWindow(window);
     glfwTerminate();
