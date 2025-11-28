@@ -87,22 +87,8 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject>& obj) {
     float inertiaAdjusted = 0.002f * obj->mass;
     float gravityAdjusted = 0.002f * obj->mass;
 
-    float rate = (std::abs(vel.x) + std::abs(vel.z));
-    if (rate == 0.0f) {
-        rate = 1.0f;
-    }
-
     // std::cout << vel.x << " " << (inertiaAdjusted * (std::abs(vel.x) / rate)) << " " << (std::abs(vel.x) / rate) << " x" << std::endl;
     // std::cout << vel.z << " " << (inertiaAdjusted * (std::abs(vel.z) / rate)) << " " << (std::abs(vel.z) / rate) << " z" << std::endl;
-
-    if (vel.x < 0) { vel.x += (inertiaAdjusted * (std::abs(vel.x) / rate)); }
-    if (vel.x > 0) { vel.x -= (inertiaAdjusted * (std::abs(vel.x) / rate)); }
-    if (vel.z < 0) { vel.z += (inertiaAdjusted * (std::abs(vel.z) / rate)); }
-    if (vel.z > 0) { vel.z -= (inertiaAdjusted * (std::abs(vel.z) / rate)); }
-    if (vel.x < inertiaAdjusted && vel.x > -inertiaAdjusted) { vel.x = 0.0f; }
-    if (vel.z < inertiaAdjusted && vel.z > -inertiaAdjusted) { vel.z = 0.0f; }
-
-    vel.y -= gravityAdjusted;
 
     for (auto obstacle : obstacles) {
         if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y, pos.z), obj->getCollider(), obstacle)) { XCollision = true; }
@@ -126,6 +112,22 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject>& obj) {
     else { vel.z = 0.0f; }
     if (!YCollision) { pos.y += vel.y; }
     else { vel.y = 0.0f; }
+
+    float rate = (float)(std::sqrt(std::pow(std::abs(vel.x), 2) + std::pow(std::abs(vel.z), 2)));
+
+    // std::cout << (inertiaAdjusted * (std::abs(vel.x) / rate)) << " x" << std::endl;
+    // std::cout << (inertiaAdjusted * (std::abs(vel.z) / rate)) << " z" << std::endl;
+
+    if (rate != 0.0f) {
+        if (vel.x < 0) { vel.x += (inertiaAdjusted * (std::abs(vel.x) / rate)); }
+        if (vel.x > 0) { vel.x -= (inertiaAdjusted * (std::abs(vel.x) / rate)); }
+        if (vel.z < 0) { vel.z += (inertiaAdjusted * (std::abs(vel.z) / rate)); }
+        if (vel.z > 0) { vel.z -= (inertiaAdjusted * (std::abs(vel.z) / rate)); }
+        if (vel.x < inertiaAdjusted && vel.x > -inertiaAdjusted) { vel.x = 0.0f; }
+        if (vel.z < inertiaAdjusted && vel.z > -inertiaAdjusted) { vel.z = 0.0f; }
+    }
+
+    vel.y -= gravityAdjusted;
 
     // std::cout << XCollision << " " << YCollision << " " << ZCollision << std::endl;
     // std::cout << vel.x << " " << vel.y << " " << vel.z << std::endl;
@@ -180,7 +182,7 @@ void PhysicsEngine::addVelocityClampedRotation(std::shared_ptr<Object> object, g
         real_velocity.y = velocity.y * std::sin(rotation.z);
         real_velocity.z = (velocity.x * std::sin(rotation.y) * std::cos(rotation.z)) + (velocity.z * std::cos(rotation.y) * std::cos(rotation.z));
 
-        float rate = (std::abs(real_velocity.x) + std::abs(real_velocity.z));
+        float rate = (float)(std::sqrt(std::pow(std::abs(real_velocity.x), 2) + std::pow(std::abs(real_velocity.z), 2)));
         float limitX = limit.x * (std::abs(real_velocity.x) / rate);
         float limitZ = limit.z * (std::abs(real_velocity.z) / rate);
         float limitY = limit.y;

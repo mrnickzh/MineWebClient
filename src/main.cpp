@@ -138,24 +138,6 @@ GLuint shaderProgram;
 bool firstMouse = true;
 bool freeCamLock = false;
 
-// int tps = 60;
-// int mps = 1000 / tps;
-// long long ltt = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-//
-// void do_tick() {
-//     long long now = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-//     long long elapsed = now - ltt;
-//
-//     if (elapsed >= mps) {
-//         int ticksToRun = (int) (elapsed / mps);
-//         for (int i = 0; i < ticksToRun; i++) {
-//             TickEvent event;
-//             EventBus::getInstance().publish(&event);
-//         }
-//         ltt = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-//     }
-// }
-
 EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     windowWidth = e->windowInnerWidth;
     windowHeight = e->windowInnerHeight;
@@ -171,13 +153,13 @@ void processInput(GLFWwindow *window)
     if (!ourCamera->freeCam) {
         glm::vec3 totalvelocity = glm::vec3(0.0f, 0.0f, 0.0f);
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            totalvelocity += glm::vec3(0.0025f, 0.0f, 0.0f);
+            totalvelocity += glm::vec3(0.05f, 0.0f, 0.0f);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            totalvelocity += glm::vec3(-0.0025f, 0.0f, 0.0f);
+            totalvelocity += glm::vec3(-0.05f, 0.0f, 0.0f);
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            totalvelocity += glm::vec3(0.0f, 0.0f, -0.0025f);
+            totalvelocity += glm::vec3(0.0f, 0.0f, -0.05f);
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            totalvelocity += glm::vec3(0.0f, 0.0f, 0.0025f);
+            totalvelocity += glm::vec3(0.0f, 0.0f, 0.05f);
         Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, totalvelocity, glm::vec3(maxH, 0.1f, maxH));
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && Main::physicsEngine->isOnFoot(Main::localPlayer->object)) {
             Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3(0.0f, 0.1f, 0.0f));
@@ -235,7 +217,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void preRender() {
-    // do_tick();
     glClearColor(0.53f, 0.81f, 0.98f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
