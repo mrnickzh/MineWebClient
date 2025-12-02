@@ -1,0 +1,23 @@
+#pragma once
+
+#define GLM_FORCE_PURE
+#include <GLES3/gl3.h>
+
+#include "../../lib/glm/glm.hpp"
+#include "../../lib/glm/gtc/matrix_transform.hpp"
+#include "../../lib/glm/gtc/type_ptr.hpp"
+
+struct GlyphInfo
+{
+    glm::vec2 positions[6];
+    glm::vec2 uvs[6];
+    float offsetX, offsetY;
+};
+
+class FontManager {
+public:
+    void init(const std::string& path);
+    void render(GLuint& vao, GLuint& vbo, GLuint& uv, int count);
+    GlyphInfo getGlyphInfo(uint32_t character, float offsetX, float offsetY);
+    int genGlyphs(const std::string& text, int x, int y, GLuint& vao, GLuint& vbo, GLuint& uv);
+};

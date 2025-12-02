@@ -4,16 +4,21 @@
 #include "Objects/Object.hpp"
 #include "../MineWebServer/src/Server.hpp"
 #include "Entities/Entity.hpp"
+#include "GUI/GUIManager.hpp"
 #include "Physics/PhysicsEngine.hpp"
 #include "Utils/ChunkMap.hpp"
+#include "Utils/FontManager.hpp"
 #include "Utils/TextureManager.hpp"
 #include "Utils/VertexManager.hpp"
 
 namespace Main {
     inline Shader* ourShader;
+    inline Shader* fontShader;
 
     inline VertexManager* vertexManager;
     inline TextureManager* textureManager;
+    inline FontManager* fontManager;
+    inline GUIManager* guiManager;
 
     inline std::vector<std::shared_ptr<Object>> objects;
     inline std::map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Comparator> chunks;

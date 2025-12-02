@@ -133,6 +133,7 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject>& obj) {
     // std::cout << vel.x << " " << vel.y << " " << vel.z << std::endl;
 
     obj->setPosition(pos);
+    // std::cout << obj->getPosition().x << " " << obj->getPosition().y << " " << obj->getPosition().z << std::endl;
     obj->velocity = vel;
 }
 
@@ -245,6 +246,55 @@ bool PhysicsEngine::isOnFoot(std::shared_ptr<Object> object) {
         }
     }
     return false;
+}
+
+RaycastResult PhysicsEngine::raycast(float length, glm::vec3 startpos, glm::vec3 rotation) {
+    RaycastResult result(false, length, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), nullptr);
+
+    rotation = glm::radians(rotation);
+    glm::vec3 raystep = glm::vec3(0.2f, 0.2f, 0.0f);
+    glm::vec3 direction = glm::vec3(0.0f, 0.0f, 0.0f);
+    int steps = 0;
+
+    direction.x = (raystep.x * std::cos(rotation.y) * std::cos(rotation.z)) + (raystep.z * -std::sin(rotation.y) * std::cos(rotation.z));
+    direction.y = raystep.y * std::sin(rotation.z);
+    direction.z = (raystep.x * std::sin(rotation.y) * std::cos(rotation.z)) + (raystep.z * std::cos(rotation.y) * std::cos(rotation.z));
+
+    glm::vec3 endpos = glm::vec3(direction.x * std::round(length / 0.2f), direction.y * std::round(length / 0.2f), direction.z * std::round(length / 0.2f));
+
+    while (steps < (int)std::round(length / 0.2f)) {
+        glm::vec3 position = startpos + glm::vec3(direction.x * (float)steps, direction.y * (float)steps, direction.z * (float)steps);
+
+        glm::vec3 currentChunk = glm::vec3(std::floor((position.x + 0.5f) / 8.0f), std::floor((position.y + 0.5f) / 8.0f), std::floor((position.z + 0.5f) / 8.0f));
+        glm::vec3 currentChunkBlock = glm::vec3((int)round(std::fmod(position.x, 8.0f)), (int)round(std::fmod(position.y, 8.0f)), (int)round(std::fmod(position.z, 8.0f)));
+        currentChunkBlock.x += (currentChunk.x < 0.0f ? (currentChunkBlock.x == 0.0f ? 0.0f : 8.0f) : 0.0f);
+        currentChunkBlock.y += (currentChunk.y < 0.0f ? (currentChunkBlock.y == 0.0f ? 0.0f : 8.0f) : 0.0f);
+        currentChunkBlock.z += (currentChunk.z < 0.0f ? (currentChunkBlock.z == 0.0f ? 0.0f : 8.0f) : 0.0f);
+        glm::vec3 collisionChunk = currentChunk;
+        glm::vec3 collisionChunkBlock = currentChunkBlock;
+        // std::cout << collisionChunk.x << ", " << collisionChunk.y << ", " << collisionChunk.z << std::endl;
+        // std::cout << collisionChunkBlock.x << ", " << collisionChunkBlock.y << ", " << collisionChunkBlock.z << std::endl;
+        // std::cout << position.x << " " << position.y << " " << position.z << std::endl;
+        if ((*chunkmap).find(collisionChunk) != (*chunkmap).end()) {
+            std::shared_ptr<Object> object2 = (*chunkmap)[collisionChunk]->getBlock(collisionChunkBlock);
+            // std::cout << object2->position.x << " " << object2->position.y << " " << object2->position.z << " " << object2->cancollide << std::endl;
+            if (object2->cancollide) {
+                result.hit = true;
+                result.distance = glm::distance(startpos, object2->position);
+                result.blockpos = collisionChunkBlock;
+                result.chunkpos = collisionChunk;
+                result.object = object2;
+                break;
+            }
+        }
+
+        if (glm::length(position - startpos) > glm::length(endpos)) {
+            break;
+        }
+
+        steps++;
+    }
+    return result;
 }
 
 void PhysicsEngine::step() {

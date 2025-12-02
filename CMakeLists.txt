@@ -30,6 +30,8 @@ target_link_options(MineWebClient PRIVATE
         "SHELL:-s USE_PTHREADS=1"
         "SHELL:-s ENVIRONMENT=web,worker"
         "SHELL:-s PTHREAD_POOL_SIZE=4"
+        "SHELL:-s STACK_SIZE=16777216"
+        "SHELL:-s INITIAL_MEMORY=134217728"
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/assets@/assets"
 )
 

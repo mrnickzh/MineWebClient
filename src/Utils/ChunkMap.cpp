@@ -31,6 +31,7 @@ ChunkMap::ChunkMap() {
 
 void ChunkMap::addBlock(glm::vec3 blockPos, std::shared_ptr<Object> block) {
     blocks[blockPos] = block;
+    initTranslations();
 }
 
 std::shared_ptr<Object> ChunkMap::getBlock(glm::vec3 blockPos) {

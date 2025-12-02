@@ -6,6 +6,14 @@
 
 #include "PhysicsObject.hpp"
 
+struct RaycastResult {
+    bool hit;
+    float distance;
+    glm::vec3 blockpos;
+    glm::vec3 chunkpos;
+    std::shared_ptr<Object> object;
+};
+
 class PhysicsEngine {
 public:
     std::vector<std::shared_ptr<PhysicsObject>> registeredObjects;
@@ -20,6 +28,7 @@ public:
     void addVelocityClamped(std::shared_ptr<Object> object, glm::vec3 velocity, glm::vec3 limit);
     void setVelocity(std::shared_ptr<Object> object, glm::vec3 velocity);
     bool isOnFoot(std::shared_ptr<Object> object);
+    RaycastResult raycast(float length, glm::vec3 startpos, glm::vec3 rotation);
     glm::vec3 getVelocity(std::shared_ptr<Object> object);
     void step();
 private:

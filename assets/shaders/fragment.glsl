@@ -6,9 +6,9 @@ out vec4 FragColor;
 
 in vec3 TexCoord;
 
-uniform sampler2DArray textureArray;
+uniform sampler2DArray textureSampler;
 
 void main()
 {
-    FragColor = texture(textureArray, vec3(TexCoord.xy, TexCoord.z));
+    FragColor = texture(textureSampler, vec3(TexCoord.xy, TexCoord.z));
 }

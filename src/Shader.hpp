@@ -17,7 +17,7 @@ public:
     GLuint ID;
     std::map<std::string, GLint> uniforms;
 
-    Shader(const char* vertexPath, const char* fragmentPath) {
+    Shader(const char* vertexPath, const char* fragmentPath, std::map<std::string, GLint> unis) {
         std::string vertexCode;
         std::string fragmentCode;
         std::ifstream vShaderFile;
@@ -25,7 +25,7 @@ public:
         vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
-        uniforms = {{"view", 0}, {"projection", 0}};
+        uniforms = unis;
 
         try
         {

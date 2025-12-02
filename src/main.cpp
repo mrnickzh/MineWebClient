@@ -14,11 +14,13 @@
 
 #include "Shader.hpp"
 #include "Camera.hpp"
+#include "InputHandler.hpp"
 #include "Objects/BlockObject.hpp"
 
 #include "../MineWebServer/src/Server.hpp"
 #include "Event/EventBus.hpp"
 #include "Event/Events/TickEvent.hpp"
+#include "GUI/Elements/TextElement.hpp"
 #include "Objects/EntityObject.hpp"
 #include "Protocol/PacketHelper.hpp"
 #include "Protocol/Socket.hpp"
@@ -137,6 +139,7 @@ GLuint shaderProgram;
 
 bool firstMouse = true;
 bool freeCamLock = false;
+bool testLock = false;
 
 EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     windowWidth = e->windowInnerWidth;
@@ -152,40 +155,55 @@ void processInput(GLFWwindow *window)
     glm::vec3 rotation = Main::localPlayer->object->rotation;
     if (!ourCamera->freeCam) {
         glm::vec3 totalvelocity = glm::vec3(0.0f, 0.0f, 0.0f);
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        if (InputHandler::isKeyPressed("KeyW"))
             totalvelocity += glm::vec3(0.05f, 0.0f, 0.0f);
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        if (InputHandler::isKeyPressed("KeyS"))
             totalvelocity += glm::vec3(-0.05f, 0.0f, 0.0f);
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        if (InputHandler::isKeyPressed("KeyA"))
             totalvelocity += glm::vec3(0.0f, 0.0f, -0.05f);
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        if (InputHandler::isKeyPressed("KeyD"))
             totalvelocity += glm::vec3(0.0f, 0.0f, 0.05f);
         Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, totalvelocity, glm::vec3(maxH, 0.1f, maxH));
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && Main::physicsEngine->isOnFoot(Main::localPlayer->object)) {
-            Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3(0.0f, 0.1f, 0.0f));
+        if (InputHandler::isKeyPressed("Space") && Main::physicsEngine->isOnFoot(Main::localPlayer->object)) {
+            Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3(maxH, 0.1f, maxH));
         }
     }
     else {
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        if (InputHandler::isKeyPressed("KeyW"))
             ourCamera->Position += glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Front;
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        if (InputHandler::isKeyPressed("KeyS"))
             ourCamera->Position += glm::vec3(-1.0f * deltaTime, 0.0f, -1.0f * deltaTime) * ourCamera->Front;
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        if (InputHandler::isKeyPressed("KeyA"))
             ourCamera->Position += glm::vec3(-1.0f * deltaTime, 0.0f, -1.0f * deltaTime) * ourCamera->Right;
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        if (InputHandler::isKeyPressed("KeyD"))
             ourCamera->Position += glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Right;
     }
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
         emscripten_request_pointerlock("canvas", EM_TRUE);
 
-    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && !freeCamLock) {
+    if (InputHandler::isKeyPressed("KeyC") && !freeCamLock) {
         ourCamera->freeCam = !ourCamera->freeCam;
         ourCamera->Yaw = rotation.y;
         freeCamLock = true;
     }
-    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_RELEASE && freeCamLock) {
+    if (InputHandler::isKeyReleased("KeyC") && freeCamLock) {
         freeCamLock = false;
+    }
+
+    if (InputHandler::isKeyPressed("KeyZ") && !testLock) {
+        glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
+        glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
+        RaycastResult obj = Main::physicsEngine->raycast(3.0f, p, r);
+        if (obj.hit) {
+            std::shared_ptr<AirObject> air = std::make_shared<AirObject>(obj.object->position, obj.object->rotation);
+            Main::chunks[obj.chunkpos]->addBlock(obj.blockpos, air);
+        }
+        else { std::cout << "nothing" << std::endl; }
+        testLock = true;
+    }
+    if (InputHandler::isKeyReleased("KeyZ") && testLock) {
+        testLock = false;
     }
 }
 
@@ -219,6 +237,9 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 void preRender() {
     glClearColor(0.53f, 0.81f, 0.98f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glDisable(GL_BLEND);
 
     Main::ourShader->use();
 
@@ -227,11 +248,16 @@ void preRender() {
 
     glUniformMatrix4fv(Main::ourShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
     glUniformMatrix4fv(Main::ourShader->uniforms["view"], 1, GL_FALSE, &ourCamera->GetViewMatrix()[0][0]);
+    glUniform1i(Main::ourShader->uniforms["textureSampler"], 0);
 }
 
 void render() {
     glm::vec3 playerPos = Main::localPlayer->object->position;
     glm::vec3 playerChunk = glm::vec3(floor(playerPos.x / 8.0f), floor(playerPos.y / 8.0f), floor(playerPos.z / 8.0f));
+
+    std::string coordsstr = "x: " + std::to_string(playerPos.x) + "y: " + std::to_string(playerPos.y) + "z: " + std::to_string(playerPos.z) + " cx: " + std::to_string(playerChunk.x) + "cy: " + std::to_string(playerChunk.y) + "cz: " + std::to_string(playerChunk.z);
+    std::shared_ptr<Element> e = Main::guiManager->getElement("coords");
+    dynamic_cast<TextElement*>(e.get())->setText(coordsstr, glm::vec3(0.0f, 0.0f, 0.0f));
 
     // std::cout << playerChunk.x << " " << playerChunk.y << " " << playerChunk.z << std::endl;
 
@@ -260,6 +286,7 @@ void render() {
         }
     }
 
+    Main::localPlayer->object->setposition(Main::localPlayer->object->position);
     Main::localPlayer->object->render();
 
     // AABB kek = GetAABB::CP2AABB(Main::chunks[glm::vec3(0.0f, -1.0f, 0.0f)]->getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->collider, Main::chunks[glm::vec3(0.0f, -1.0f, 0.0f)]->getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->position);
@@ -276,10 +303,46 @@ void render() {
     // Main::objects.clear();
 }
 
+void postRender() {
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    Main::fontShader->use();
+
+    glm::mat4 projection = glm::ortho(0.0f, (float)windowWidth, (float)windowHeight, 0.0f, -1.0f, 1.0f);
+
+    glUniformMatrix4fv(Main::fontShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
+    glUniform1i(Main::fontShader->uniforms["textureSampler"], 1);
+
+    Main::guiManager->render();
+
+    int stateMask = 0x0000;
+
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+        stateMask |= LEFT_CLICK;
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+        stateMask |= RIGHT_CLICK;
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS)
+        stateMask |= MIDDLE_CLICK;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+        stateMask |= CTRL_FLAG;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        stateMask |= SHIFT_FLAG;
+
+    Main::guiManager->poll(stateMask);
+
+    std::shared_ptr<Element> e = Main::guiManager->getElement("crosshair");
+    e->setPosition(windowWidth/2-10, windowHeight/2-10);
+}
+
 void mainLoop() {
     preRender();
 
     render();
+
+    postRender();
 
     processInput(window);
     glfwSwapBuffers(window);
@@ -288,6 +351,10 @@ void mainLoop() {
     float currentFrame = (float)glfwGetTime();
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
+
+    int fps = (int)std::round(1.0f / deltaTime);
+    std::shared_ptr<Element> e = Main::guiManager->getElement("fpscounter");
+    dynamic_cast<TextElement*>(e.get())->setText("FPS: " + std::to_string(fps), glm::vec3(std::max(1.0f - ((float)fps / 255.0f), 0.0f), 0.0f, 0.0f));
 }
 
 int main() {
@@ -307,6 +374,12 @@ int main() {
         return EXIT_FAILURE;
     }
 
+    emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, InputHandler::keyPressed);
+    emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, InputHandler::keyReleased);
+    emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, InputHandler::mouseMoved);
+    emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, InputHandler::mouseButton);
+    emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, InputHandler::mouseButton);
+
     PacketHelper::registerPacket(0, []() { return new HandShakePacket(); });
     PacketHelper::registerPacket(1, []() { return new AddMapObject(); });
     PacketHelper::registerPacket(2, []() { return new GenerateChunk(); });
@@ -314,10 +387,22 @@ int main() {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouse_callback);
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}});
+    Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}});
 
-    Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl");
+    Main::fontManager = new FontManager();
+    Main::fontManager->init("/assets/fonts/montserrat.ttf");
+
+    Main::guiManager = new GUIManager();
+    std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int){}, 0, 20, Main::fontManager);
+    fpscounter->setText("FPS: 0", glm::vec3(0.0f, 0.0f, 0.0f));
+    Main::guiManager->addElement(fpscounter);
+    std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int){}, 0, 0, Main::fontManager);
+    crosshair->setText("+", glm::vec3(1.0f, 1.0f, 1.0f));
+    Main::guiManager->addElement(crosshair);
+    std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int){}, 0, 40, Main::fontManager);
+    coords->setText("x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0", glm::vec3(0.0f, 0.0f, 0.0f));
+    Main::guiManager->addElement(coords);
 
     Main::vertexManager = new VertexManager();
     Main::vertexManager->initVBO(0, vertices, sizeof(vertices));
