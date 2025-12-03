@@ -31,7 +31,6 @@ ChunkMap::ChunkMap() {
 
 void ChunkMap::addBlock(glm::vec3 blockPos, std::shared_ptr<Object> block) {
     blocks[blockPos] = block;
-    initTranslations();
 }
 
 std::shared_ptr<Object> ChunkMap::getBlock(glm::vec3 blockPos) {
@@ -42,6 +41,7 @@ void ChunkMap::initTranslations() {
     memset(translations, 0, sizeof(translations));
     memset(textures, 0, sizeof(textures));
     instanceCount = 0;
+    // std::cout << blocks.size() << std::endl;
     for (auto& b : blocks) {
         if (typeid((*b.second)) != typeid(AirObject)) {
             translations[instanceCount] = b.second->model;

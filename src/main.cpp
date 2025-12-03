@@ -212,6 +212,7 @@ void processInput()
         if (obj.hit) {
             std::shared_ptr<AirObject> air = std::make_shared<AirObject>(obj.object->position, obj.object->rotation);
             Main::chunks[obj.chunkpos]->addBlock(obj.blockpos, air);
+            Main::chunks[obj.chunkpos]->initTranslations();
         }
         else { std::cout << "nothing" << std::endl; }
 
@@ -224,11 +225,14 @@ void processInput()
     if (InputHandler::isMousePressed(MOUSE_RIGHT) && checkPointerLock() && !placeLock) {
         glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
         glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
-        RaycastResult obj = Main::physicsEngine->raycast(3.0f, p, r);
+        RaycastResult obj = Main::physicsEngine->raycast(4.0f, p, r);
         if (obj.hit) {
             if (!Main::physicsEngine->possibleCollision(obj.prevobject->position, glm::vec3(0.5f, 0.5f, 0.5f), Main::localPlayer->object)) {
                 std::shared_ptr<BlockObject> wood = std::make_shared<BlockObject>(obj.prevobject->position, obj.prevobject->rotation, 0, 4, true, glm::vec3(0.5f, 0.5f, 0.5f));
+                // std::cout << obj.prevchunkpos.x << " " << obj.prevchunkpos.y << " " << obj.prevchunkpos.z << std::endl;
+                // std::cout << obj.prevblockpos.x << " " << obj.prevblockpos.y << " " << obj.prevblockpos.z << std::endl;
                 Main::chunks[obj.prevchunkpos]->addBlock(obj.prevblockpos, wood);
+                Main::chunks[obj.prevchunkpos]->initTranslations();
             }
             else { std::cout << "blocked" << std::endl; }
         }

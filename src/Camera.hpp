@@ -33,7 +33,7 @@ public:
     float Zoom;
     std::shared_ptr<Entity> targetEntity;
     bool freeCam = false;
-    glm::vec3 offset = glm::vec3(0.0f, 0.25f, 0.0f);
+    glm::vec3 offset = glm::vec3(0.0f, 0.3f, 0.0f);
 
     // constructor with vectors
     Camera(std::shared_ptr<Entity> targetEntity) : Front(glm::vec3(1.0f, 0.0f, 0.0f)), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)

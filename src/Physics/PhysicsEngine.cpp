@@ -265,13 +265,28 @@ RaycastResult PhysicsEngine::raycast(float length, glm::vec3 startpos, glm::vec3
     while (steps < (int)std::round(length / 0.2f)) {
         glm::vec3 position = startpos + glm::vec3(direction.x * (float)steps, direction.y * (float)steps, direction.z * (float)steps);
 
-        glm::vec3 currentChunk = glm::vec3(std::floor((position.x + 0.5f) / 8.0f), std::floor((position.y + 0.5f) / 8.0f), std::floor((position.z + 0.5f) / 8.0f));
+        glm::vec3 currentChunk = glm::vec3(floor((position.x + 0.5f) / 8.0f), floor((position.y + 0.5f) / 8.0f), floor((position.z + 0.5f) / 8.0f));
         glm::vec3 currentChunkBlock = glm::vec3((int)round(std::fmod(position.x, 8.0f)), (int)round(std::fmod(position.y, 8.0f)), (int)round(std::fmod(position.z, 8.0f)));
+        // std::cout << currentChunk.x << ", " << currentChunk.y << ", " << currentChunk.z << std::endl;
+        // std::cout << currentChunkBlock.x << ", " << currentChunkBlock.y << ", " << currentChunkBlock.z << std::endl;
         currentChunkBlock.x += (currentChunk.x < 0.0f ? (currentChunkBlock.x == 0.0f ? 0.0f : 8.0f) : 0.0f);
         currentChunkBlock.y += (currentChunk.y < 0.0f ? (currentChunkBlock.y == 0.0f ? 0.0f : 8.0f) : 0.0f);
         currentChunkBlock.z += (currentChunk.z < 0.0f ? (currentChunkBlock.z == 0.0f ? 0.0f : 8.0f) : 0.0f);
+
+        currentChunkBlock.x -= (currentChunk.x > 0.0f ? (currentChunkBlock.x == 8.0f ? 8.0f : 0.0f) : 0.0f);
+        currentChunkBlock.y -= (currentChunk.y > 0.0f ? (currentChunkBlock.y == 8.0f ? 8.0f : 0.0f) : 0.0f);
+        currentChunkBlock.z -= (currentChunk.z > 0.0f ? (currentChunkBlock.z == 8.0f ? 8.0f : 0.0f) : 0.0f);
+        // std::cout << currentChunk.x << ", " << currentChunk.y << ", " << currentChunk.z << std::endl;
+        // std::cout << currentChunkBlock.x << ", " << currentChunkBlock.y << ", " << currentChunkBlock.z << std::endl;
+        // std::cout << "==============" << std::endl;
         glm::vec3 collisionChunk = currentChunk;
         glm::vec3 collisionChunkBlock = currentChunkBlock;
+        // if (currentChunk.x < 0) { collisionChunk.x -= 1.0f; collisionChunkBlock.x += 8.0f; }
+        // if (currentChunk.x > 7) { collisionChunk.x += 1.0f; collisionChunkBlock.x -= 8.0f; }
+        // if (currentChunk.y < 0) { collisionChunk.y -= 1.0f; collisionChunkBlock.y += 8.0f; }
+        // if (currentChunk.y > 7) { collisionChunk.y += 1.0f; collisionChunkBlock.y -= 8.0f; }
+        // if (currentChunk.z < 0) { collisionChunk.z -= 1.0f; collisionChunkBlock.z += 8.0f; }
+        // if (currentChunk.z > 7) { collisionChunk.z += 1.0f; collisionChunkBlock.z -= 8.0f; }
         // std::cout << collisionChunk.x << ", " << collisionChunk.y << ", " << collisionChunk.z << std::endl;
         // std::cout << collisionChunkBlock.x << ", " << collisionChunkBlock.y << ", " << collisionChunkBlock.z << std::endl;
         // std::cout << position.x << " " << position.y << " " << position.z << std::endl;
@@ -287,6 +302,8 @@ RaycastResult PhysicsEngine::raycast(float length, glm::vec3 startpos, glm::vec3
                 break;
             }
             else {
+                // std::cout << collisionChunk.x << ", " << collisionChunk.y << ", " << collisionChunk.z << std::endl;
+                // std::cout << collisionChunkBlock.x << ", " << collisionChunkBlock.y << ", " << collisionChunkBlock.z << std::endl;
                 result.prevblockpos = collisionChunkBlock;
                 result.prevchunkpos = collisionChunk;
                 result.prevobject = object2;

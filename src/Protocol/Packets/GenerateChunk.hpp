@@ -12,7 +12,7 @@ class GenerateChunk : public Packet {
     void receive(ByteBuf &buffer) override {
         std::shared_ptr<ChunkMap> chunkMap = std::make_shared<ChunkMap>();
         chunkpos = glm::vec3(buffer.readFloat(), buffer.readFloat(), buffer.readFloat());
-        // int ch = 0;
+        int ch = 0;
 
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
@@ -24,7 +24,7 @@ class GenerateChunk : public Packet {
                     position.y = (chunkpos.y * 8.0f) + (blockpos.y);
                     position.z = (chunkpos.z * 8.0f) + (blockpos.z);
 
-                    // ch += 1;
+                    ch += 1;
 
                     switch (id) {
                         case 0: {
@@ -52,11 +52,12 @@ class GenerateChunk : public Packet {
             }
         }
 
-        // if (ch > 256) {
-        //     std::cout << chunkpos.x << " " << chunkpos.y << std::endl;
-        // }
-        chunkMap->initTranslations();
+        if (ch > 512) {
+            // std::cout << chunkpos.x << " " << chunkpos.y << " " << chunkpos.z << std::endl;
+        }
+
         Main::chunks[chunkpos] = chunkMap;
+        chunkMap->initTranslations();
     }
     void send(ByteBuf &buffer) override {
         buffer.writeFloat(chunkpos.x);
