@@ -19,6 +19,7 @@
 
 #include "../MineWebServer/src/Server.hpp"
 #include "Event/EventBus.hpp"
+#include "Event/Events/MouseMoveEvent.hpp"
 #include "Event/Events/TickEvent.hpp"
 #include "GUI/Elements/TextElement.hpp"
 #include "Objects/EntityObject.hpp"
@@ -131,15 +132,28 @@ float lastFrame = 0.0f;
 
 float maxH = 0.05f;
 
-float lastX = 400, lastY = 300;
-
 GLuint vertexShader;
 GLuint fragmentShader;
 GLuint shaderProgram;
 
-bool firstMouse = true;
 bool freeCamLock = false;
-bool testLock = false;
+bool placeLock = false;
+bool breakLock = false;
+
+bool checkPointerLock() {
+    EmscriptenPointerlockChangeEvent lastChangeEvent;
+    auto haveLockInfo = emscripten_get_pointerlock_status(&lastChangeEvent) == EMSCRIPTEN_RESULT_SUCCESS;
+    if (!haveLockInfo) {
+        std::cout << "Can't get pointer lock info" << std::endl;
+        return false;
+    }
+
+    if (!lastChangeEvent.isActive) {
+        return false;
+    }
+
+    return true;
+}
 
 EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     windowWidth = e->windowInnerWidth;
@@ -150,7 +164,7 @@ EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     return EM_TRUE;
 }
 
-void processInput(GLFWwindow *window)
+void processInput()
 {
     glm::vec3 rotation = Main::localPlayer->object->rotation;
     if (!ourCamera->freeCam) {
@@ -179,7 +193,7 @@ void processInput(GLFWwindow *window)
             ourCamera->Position += glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Right;
     }
 
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    if (InputHandler::isMousePressed(MOUSE_LEFT))
         emscripten_request_pointerlock("canvas", EM_TRUE);
 
     if (InputHandler::isKeyPressed("KeyC") && !freeCamLock) {
@@ -191,7 +205,7 @@ void processInput(GLFWwindow *window)
         freeCamLock = false;
     }
 
-    if (InputHandler::isKeyPressed("KeyZ") && !testLock) {
+    if (InputHandler::isMousePressed(MOUSE_LEFT) && checkPointerLock() && !breakLock) {
         glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
         glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
         RaycastResult obj = Main::physicsEngine->raycast(3.0f, p, r);
@@ -200,38 +214,31 @@ void processInput(GLFWwindow *window)
             Main::chunks[obj.chunkpos]->addBlock(obj.blockpos, air);
         }
         else { std::cout << "nothing" << std::endl; }
-        testLock = true;
-    }
-    if (InputHandler::isKeyReleased("KeyZ") && testLock) {
-        testLock = false;
-    }
-}
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-    EmscriptenPointerlockChangeEvent lastChangeEvent;
-    auto haveLockInfo = emscripten_get_pointerlock_status(&lastChangeEvent) == EMSCRIPTEN_RESULT_SUCCESS;
-    if (!haveLockInfo) {
-        std::cout << "Can't get pointer lock info" << std::endl;
-        return;
+        breakLock = true;
+    }
+    if (InputHandler::isMouseReleased(MOUSE_LEFT) && breakLock) {
+        breakLock = false;
     }
 
-    if (!lastChangeEvent.isActive) {
-        return;
+    if (InputHandler::isMousePressed(MOUSE_RIGHT) && checkPointerLock() && !placeLock) {
+        glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
+        glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
+        RaycastResult obj = Main::physicsEngine->raycast(3.0f, p, r);
+        if (obj.hit) {
+            if (!Main::physicsEngine->possibleCollision(obj.prevobject->position, glm::vec3(0.5f, 0.5f, 0.5f), Main::localPlayer->object)) {
+                std::shared_ptr<BlockObject> wood = std::make_shared<BlockObject>(obj.prevobject->position, obj.prevobject->rotation, 0, 4, true, glm::vec3(0.5f, 0.5f, 0.5f));
+                Main::chunks[obj.prevchunkpos]->addBlock(obj.prevblockpos, wood);
+            }
+            else { std::cout << "blocked" << std::endl; }
+        }
+        else { std::cout << "nothing" << std::endl; }
+
+        placeLock = true;
     }
-
-    if (firstMouse)
-    {
-        lastX = (float)xpos;
-        lastY = (float)ypos;
-        firstMouse = false;
+    if (InputHandler::isMouseReleased(MOUSE_RIGHT) && placeLock) {
+        placeLock = false;
     }
-
-    float xoffset = (float)xpos - lastX;
-    float yoffset = lastY - (float)ypos;
-    lastX = (float)xpos;
-    lastY = (float)ypos;
-
-    ourCamera->ProcessMouseMovement(xoffset, yoffset);
 }
 
 void preRender() {
@@ -255,7 +262,7 @@ void render() {
     glm::vec3 playerPos = Main::localPlayer->object->position;
     glm::vec3 playerChunk = glm::vec3(floor(playerPos.x / 8.0f), floor(playerPos.y / 8.0f), floor(playerPos.z / 8.0f));
 
-    std::string coordsstr = "x: " + std::to_string(playerPos.x) + "y: " + std::to_string(playerPos.y) + "z: " + std::to_string(playerPos.z) + " cx: " + std::to_string(playerChunk.x) + "cy: " + std::to_string(playerChunk.y) + "cz: " + std::to_string(playerChunk.z);
+    std::string coordsstr = "x: " + std::to_string(playerPos.x) + " y: " + std::to_string(playerPos.y) + " z: " + std::to_string(playerPos.z) + " cx: " + std::to_string((int)playerChunk.x) + " cy: " + std::to_string((int)playerChunk.y) + " cz: " + std::to_string((int)playerChunk.z);
     std::shared_ptr<Element> e = Main::guiManager->getElement("coords");
     dynamic_cast<TextElement*>(e.get())->setText(coordsstr, glm::vec3(0.0f, 0.0f, 0.0f));
 
@@ -320,15 +327,15 @@ void postRender() {
 
     int stateMask = 0x0000;
 
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    if (InputHandler::isMousePressed(MOUSE_LEFT))
         stateMask |= LEFT_CLICK;
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+    if (InputHandler::isMousePressed(MOUSE_RIGHT))
         stateMask |= RIGHT_CLICK;
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS)
+    if (InputHandler::isMousePressed(MOUSE_MIDDLE))
         stateMask |= MIDDLE_CLICK;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+    if (InputHandler::isKeyPressed("ControlLeft"))
         stateMask |= CTRL_FLAG;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+    if (InputHandler::isKeyPressed("ShiftLeft"))
         stateMask |= SHIFT_FLAG;
 
     Main::guiManager->poll(stateMask);
@@ -344,7 +351,7 @@ void mainLoop() {
 
     postRender();
 
-    processInput(window);
+    processInput();
     glfwSwapBuffers(window);
     glfwPollEvents();
 
@@ -385,7 +392,16 @@ int main() {
     PacketHelper::registerPacket(2, []() { return new GenerateChunk(); });
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetCursorPosCallback(window, mouse_callback);
+
+    L_SUBSCRIBE(MouseMoveEvent, [](MouseMoveEvent* event) {
+        int x = event->posx;
+        int y = event->posy;
+        int dx = event->deltax;
+        int dy = event->deltay;
+
+        if (checkPointerLock())
+            ourCamera->ProcessMouseMovement(dx, -dy);
+    });
 
     Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}});
     Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}});
@@ -415,6 +431,7 @@ int main() {
     Main::textureManager->addTexture("/assets/textures/stone.png", 1);
     Main::textureManager->addTexture("/assets/textures/dirt.png", 2);
     Main::textureManager->addTexture("/assets/textures/grass.png", 3);
+    Main::textureManager->addTexture("/assets/textures/wood.png", 4);
 
     //entities
     Main::textureManager->addTexture("/assets/textures/player.png", 49);

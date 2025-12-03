@@ -5,6 +5,12 @@
 #include <emscripten/em_types.h>
 #include <emscripten/html5.h>
 
+enum MouseButtons {
+    MOUSE_LEFT,
+    MOUSE_MIDDLE,
+    MOUSE_RIGHT
+};
+
 class InputHandler {
 public:
     static EM_BOOL mouseMoved(int, const EmscriptenMouseEvent* e, void*);
@@ -13,4 +19,6 @@ public:
     static EM_BOOL keyReleased(int, const EmscriptenKeyboardEvent* e, void*);
     static bool isKeyPressed(const std::string& key);
     static bool isKeyReleased(const std::string& key);
+    static bool isMousePressed(int key);
+    static bool isMouseReleased(int key);
 };

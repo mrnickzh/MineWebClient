@@ -7,6 +7,7 @@
 #include "Event/Events/MouseMoveEvent.hpp"
 
 std::set<std::string> chars;
+bool buttons[3] = {false, false, false};
 
 EM_BOOL InputHandler::mouseMoved(int, const EmscriptenMouseEvent* e, void*) {
     MouseMoveEvent event((float)e->clientX, (float)e->clientY, (float)e->movementX, (float)e->movementY);
@@ -17,6 +18,7 @@ EM_BOOL InputHandler::mouseMoved(int, const EmscriptenMouseEvent* e, void*) {
 
 EM_BOOL InputHandler::mouseButton(int eventType, const EmscriptenMouseEvent* e, void*) {
     MouseButtonEvent event(e->button, (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN));
+    buttons[e->button] = (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN);
     EventBus::getInstance().publish(&event);
     if (event.canceled) return EM_TRUE;
     return EM_FALSE;
@@ -44,4 +46,12 @@ bool InputHandler::isKeyPressed(const std::string& key) {
 
 bool InputHandler::isKeyReleased(const std::string& key) {
     return chars.find(key) == chars.end();
+}
+
+bool InputHandler::isMousePressed(int key) {
+    return buttons[key];
+}
+
+bool InputHandler::isMouseReleased(int key) {
+    return !buttons[key];
 }

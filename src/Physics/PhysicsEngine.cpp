@@ -29,7 +29,7 @@ bool PhysicsEngine::isColliding(glm::vec3 object1, glm::vec3 object2, glm::vec3 
     return false;
 }
 
-bool PhysicsEngine::possibleCollision(glm::vec3 position, glm::vec3 collider, std::shared_ptr<Object>& object2) {
+bool PhysicsEngine::possibleCollision(glm::vec3 position, glm::vec3 collider, const std::shared_ptr<Object>& object2) {
     if (!object2->cancollide) { return false; }
     return isColliding(position, object2->position, collider, object2->collider);
 }
@@ -85,7 +85,7 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject>& obj) {
     if (obstacles.size() < 36) { std::cout << obstacles.size() << std::endl; return; }
 
     float inertiaAdjusted = 0.002f * obj->mass;
-    float gravityAdjusted = 0.002f * obj->mass;
+    float gravityAdjusted = 0.003f * obj->mass;
 
     // std::cout << vel.x << " " << (inertiaAdjusted * (std::abs(vel.x) / rate)) << " " << (std::abs(vel.x) / rate) << " x" << std::endl;
     // std::cout << vel.z << " " << (inertiaAdjusted * (std::abs(vel.z) / rate)) << " " << (std::abs(vel.z) / rate) << " z" << std::endl;
@@ -249,7 +249,7 @@ bool PhysicsEngine::isOnFoot(std::shared_ptr<Object> object) {
 }
 
 RaycastResult PhysicsEngine::raycast(float length, glm::vec3 startpos, glm::vec3 rotation) {
-    RaycastResult result(false, length, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), nullptr);
+    RaycastResult result(false, length, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), nullptr, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), nullptr);
 
     rotation = glm::radians(rotation);
     glm::vec3 raystep = glm::vec3(0.2f, 0.2f, 0.0f);
@@ -285,6 +285,11 @@ RaycastResult PhysicsEngine::raycast(float length, glm::vec3 startpos, glm::vec3
                 result.chunkpos = collisionChunk;
                 result.object = object2;
                 break;
+            }
+            else {
+                result.prevblockpos = collisionChunkBlock;
+                result.prevchunkpos = collisionChunk;
+                result.prevobject = object2;
             }
         }
 

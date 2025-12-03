@@ -12,6 +12,9 @@ struct RaycastResult {
     glm::vec3 blockpos;
     glm::vec3 chunkpos;
     std::shared_ptr<Object> object;
+    glm::vec3 prevblockpos;
+    glm::vec3 prevchunkpos;
+    std::shared_ptr<Object> prevobject;
 };
 
 class PhysicsEngine {
@@ -31,9 +34,9 @@ public:
     RaycastResult raycast(float length, glm::vec3 startpos, glm::vec3 rotation);
     glm::vec3 getVelocity(std::shared_ptr<Object> object);
     void step();
-private:
+
     bool isColliding(glm::vec3 object1, glm::vec3 object2, glm::vec3 collider1, glm::vec3 collider2);
-    bool possibleCollision(glm::vec3 position, glm::vec3 collider, std::shared_ptr<Object>& object2);
+    bool possibleCollision(glm::vec3 position, glm::vec3 collider, const std::shared_ptr<Object>& object2);
     std::vector<std::shared_ptr<Object>> possibleObstacles(glm::vec3 position);
     void calculateVelocity(std::shared_ptr<PhysicsObject>& obj);
 };
