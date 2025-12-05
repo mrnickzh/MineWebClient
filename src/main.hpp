@@ -20,14 +20,15 @@ namespace Main {
     inline FontManager* fontManager;
     inline GUIManager* guiManager;
 
-    inline std::vector<std::shared_ptr<Object>> objects;
     inline std::map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Comparator> chunks;
     inline std::vector<glm::vec3> requestedChunks;
 
     inline std::unique_ptr<PhysicsEngine> physicsEngine;
 
     inline bool isSingleplayer = false;
+    inline bool serverConnected = false;
     inline Server& serverInstance = Server::getInstance();
 
     inline std::shared_ptr<Entity> localPlayer;
+    inline std::vector<std::shared_ptr<Entity>> entities;
 }

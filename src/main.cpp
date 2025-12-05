@@ -25,9 +25,11 @@
 #include "Objects/EntityObject.hpp"
 #include "Protocol/PacketHelper.hpp"
 #include "Protocol/Socket.hpp"
-#include "Protocol/Packets/AddMapObject.hpp"
+#include "Protocol/Packets/EditChunk.hpp"
+#include "Protocol/Packets/EntityAction.hpp"
 #include "Protocol/Packets/GenerateChunk.hpp"
 #include "Protocol/Packets/HandShakePacket.hpp"
+#include "Protocol/Packets/PlayerAuthInput.hpp"
 #include "Utils/VertexManager.hpp"
 
 float vertices[] = {
@@ -181,6 +183,10 @@ void processInput()
         if (InputHandler::isKeyPressed("Space") && Main::physicsEngine->isOnFoot(Main::localPlayer->object)) {
             Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3(maxH, 0.1f, maxH));
         }
+        // if (Main::physicsEngine->getVelocity(Main::localPlayer->object) != glm::vec3(0.0f, 0.0f, 0.0f)) {
+        PlayerAuthInput packet;
+        SocketClient::sendPacket(&packet);
+        // }
     }
     else {
         if (InputHandler::isKeyPressed("KeyW"))
@@ -210,9 +216,14 @@ void processInput()
         glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
         RaycastResult obj = Main::physicsEngine->raycast(3.0f, p, r);
         if (obj.hit) {
-            std::shared_ptr<AirObject> air = std::make_shared<AirObject>(obj.object->position, obj.object->rotation);
-            Main::chunks[obj.chunkpos]->addBlock(obj.blockpos, air);
-            Main::chunks[obj.chunkpos]->initTranslations();
+            // std::shared_ptr<AirObject> air = std::make_shared<AirObject>(obj.object->position, obj.object->rotation);
+            // Main::chunks[obj.chunkpos]->addBlock(obj.blockpos, air);
+            // Main::chunks[obj.chunkpos]->initTranslations();
+            EditChunk packet;
+            packet.chunkpos = obj.chunkpos;
+            packet.blockpos = obj.blockpos;
+            packet.id = 0;
+            SocketClient::sendPacket(&packet);
         }
         else { std::cout << "nothing" << std::endl; }
 
@@ -231,8 +242,13 @@ void processInput()
                 std::shared_ptr<BlockObject> wood = std::make_shared<BlockObject>(obj.prevobject->position, obj.prevobject->rotation, 0, 4, true, glm::vec3(0.5f, 0.5f, 0.5f));
                 // std::cout << obj.prevchunkpos.x << " " << obj.prevchunkpos.y << " " << obj.prevchunkpos.z << std::endl;
                 // std::cout << obj.prevblockpos.x << " " << obj.prevblockpos.y << " " << obj.prevblockpos.z << std::endl;
-                Main::chunks[obj.prevchunkpos]->addBlock(obj.prevblockpos, wood);
-                Main::chunks[obj.prevchunkpos]->initTranslations();
+                // Main::chunks[obj.prevchunkpos]->addBlock(obj.prevblockpos, wood);
+                // Main::chunks[obj.prevchunkpos]->initTranslations();
+                EditChunk packet;
+                packet.chunkpos = obj.prevchunkpos;
+                packet.blockpos = obj.prevblockpos;
+                packet.id = 4;
+                SocketClient::sendPacket(&packet);
             }
             else { std::cout << "blocked" << std::endl; }
         }
@@ -300,6 +316,10 @@ void render() {
     Main::localPlayer->object->setposition(Main::localPlayer->object->position);
     Main::localPlayer->object->render();
 
+    for (auto& entity : Main::entities) {
+        entity->object->render();
+    }
+
     // AABB kek = GetAABB::CP2AABB(Main::chunks[glm::vec3(0.0f, -1.0f, 0.0f)]->getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->collider, Main::chunks[glm::vec3(0.0f, -1.0f, 0.0f)]->getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->position);
     // std::cout << kek.AA.x << " " << kek.AA.y << " " << kek.AA.z << std::endl;
     // std::cout << kek.BB.x << " " << kek.BB.y << " " << kek.BB.z << std::endl;
@@ -349,6 +369,10 @@ void postRender() {
 }
 
 void mainLoop() {
+    if (!Main::serverConnected) {
+        return;
+    }
+
     preRender();
 
     render();
@@ -392,8 +416,10 @@ int main() {
     emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, InputHandler::mouseButton);
 
     PacketHelper::registerPacket(0, []() { return new HandShakePacket(); });
-    PacketHelper::registerPacket(1, []() { return new AddMapObject(); });
+    PacketHelper::registerPacket(1, []() { return new EditChunk(); });
     PacketHelper::registerPacket(2, []() { return new GenerateChunk(); });
+    PacketHelper::registerPacket(3, []() { return new EntityAction(); });
+    PacketHelper::registerPacket(4, []() { return new PlayerAuthInput(); });
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -454,10 +480,10 @@ int main() {
 
     Main::physicsEngine = std::make_unique<PhysicsEngine>(&Main::chunks);
 
-    Main::isSingleplayer = true;
-    Main::serverInstance.setCallback(SocketClient::on_message);
-    SocketClient::on_open();
-    // SocketClient::connect();
+    // Main::isSingleplayer = true;
+    // Main::serverInstance.setCallback(SocketClient::on_message);
+    // SocketClient::on_open();
+    SocketClient::connect();
 
     Main::localPlayer = std::make_shared<Entity>();
     Main::localPlayer->uuid = "local";

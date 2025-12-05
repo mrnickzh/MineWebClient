@@ -6,14 +6,21 @@
 #include "Packets/HandShakePacket.hpp"
 
 EMSCRIPTEN_WEBSOCKET_T ws = 0;
+static ClientSession* localSession = new ClientSession("localhost");
 
 void SocketClient::on_open() {
+    Main::serverConnected = true;
+
+    if (Main::isSingleplayer) {
+        Main::serverInstance.clients[localSession] = nullptr;
+    }
+
     HandShakePacket pkt;
     pkt.name = "nigger";
     sendPacket(&pkt);
 }
 
-void SocketClient::on_message(ClientSession session, std::vector<uint8_t> data) {
+void SocketClient::on_message(ClientSession* session, std::vector<uint8_t> data) {
     PacketHelper::decodePacket(data);
 }
 
@@ -24,7 +31,7 @@ EM_BOOL remote_open(int type, const EmscriptenWebSocketOpenEvent *e, void *userD
 
 EM_BOOL remote_message(int type, const EmscriptenWebSocketMessageEvent *e, void *userData) {
     std::vector<uint8_t> vec(e->data, e->data + e->numBytes);
-    SocketClient::on_message(ClientSession("localhost"), vec);
+    SocketClient::on_message(localSession, vec);
     return EM_TRUE;
 }
 
@@ -44,7 +51,7 @@ void SocketClient::connect() {
 void SocketClient::sendPacket(Packet* packet) {
     std::vector<uint8_t> data = PacketHelper::encodePacket(packet);
     if (Main::isSingleplayer) {
-        Main::serverInstance.processPacket(ClientSession("localhost"), data);
+        Main::serverInstance.processPacket(localSession, data);
     }
     else {
         emscripten_websocket_send_binary(ws, data.data(), static_cast<uint32_t>(data.size()));

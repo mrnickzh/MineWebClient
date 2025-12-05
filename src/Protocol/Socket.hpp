@@ -9,5 +9,5 @@ public:
     static void connect();
 
     static void on_open();
-    static void on_message(ClientSession, std::vector<uint8_t>);
+    static void on_message(ClientSession*, std::vector<uint8_t>);
 };
