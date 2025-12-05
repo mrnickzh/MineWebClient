@@ -8,6 +8,7 @@ public:
     std::function<void(int)> callback;
     int x;
     int y;
+    bool active = true;
 
     Element(std::string id, std::function<void(int)> callback, int x, int y) : id(id), callback(callback), x(x), y(y) {};
     virtual ~Element() = default;

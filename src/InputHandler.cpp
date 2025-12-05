@@ -27,6 +27,7 @@ EM_BOOL InputHandler::mouseButton(int eventType, const EmscriptenMouseEvent* e, 
 EM_BOOL InputHandler::keyPressed(int, const EmscriptenKeyboardEvent* e, void*) {
     chars.insert(std::string(e->code));
     KeyEvent event(std::string(e->code), true);
+    strcpy(event.code, e->key);
     EventBus::getInstance().publish(&event);
     if (event.canceled) return true;
     return EM_FALSE;
@@ -35,6 +36,7 @@ EM_BOOL InputHandler::keyPressed(int, const EmscriptenKeyboardEvent* e, void*) {
 EM_BOOL InputHandler::keyReleased(int, const EmscriptenKeyboardEvent* e, void*) {
     chars.erase(std::string(e->code));
     KeyEvent event(std::string(e->code), false);
+    strcpy(event.code, e->key);
     EventBus::getInstance().publish(&event);
     if (event.canceled) return true;
     return EM_FALSE;

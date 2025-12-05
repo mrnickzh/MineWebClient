@@ -5,6 +5,7 @@ TextElement::TextElement(std::string id, std::function<void(int)> callback, int 
 }
 
 void TextElement::render() {
+    if (!active) { return; }
     glUniform3f(Main::fontShader->uniforms["color"], color.r, color.g, color.b);
     fontManager->render(vao, vbo, uv, count);
 }

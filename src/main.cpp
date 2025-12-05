@@ -19,8 +19,10 @@
 
 #include "../MineWebServer/src/Server.hpp"
 #include "Event/EventBus.hpp"
+#include "Event/Events/KeyEvent.hpp"
 #include "Event/Events/MouseMoveEvent.hpp"
 #include "Event/Events/TickEvent.hpp"
+#include "GUI/Elements/EnterElement.hpp"
 #include "GUI/Elements/TextElement.hpp"
 #include "Objects/EntityObject.hpp"
 #include "Protocol/PacketHelper.hpp"
@@ -168,96 +170,98 @@ EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
 
 void processInput()
 {
-    glm::vec3 rotation = Main::localPlayer->object->rotation;
-    if (!ourCamera->freeCam) {
-        glm::vec3 totalvelocity = glm::vec3(0.0f, 0.0f, 0.0f);
-        if (InputHandler::isKeyPressed("KeyW"))
-            totalvelocity += glm::vec3(0.05f, 0.0f, 0.0f);
-        if (InputHandler::isKeyPressed("KeyS"))
-            totalvelocity += glm::vec3(-0.05f, 0.0f, 0.0f);
-        if (InputHandler::isKeyPressed("KeyA"))
-            totalvelocity += glm::vec3(0.0f, 0.0f, -0.05f);
-        if (InputHandler::isKeyPressed("KeyD"))
-            totalvelocity += glm::vec3(0.0f, 0.0f, 0.05f);
-        Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, totalvelocity, glm::vec3(maxH, 0.1f, maxH));
-        if (InputHandler::isKeyPressed("Space") && Main::physicsEngine->isOnFoot(Main::localPlayer->object)) {
-            Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3(maxH, 0.1f, maxH));
-        }
-        // if (Main::physicsEngine->getVelocity(Main::localPlayer->object) != glm::vec3(0.0f, 0.0f, 0.0f)) {
-        PlayerAuthInput packet;
-        SocketClient::sendPacket(&packet);
-        // }
-    }
-    else {
-        if (InputHandler::isKeyPressed("KeyW"))
-            ourCamera->Position += glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Front;
-        if (InputHandler::isKeyPressed("KeyS"))
-            ourCamera->Position += glm::vec3(-1.0f * deltaTime, 0.0f, -1.0f * deltaTime) * ourCamera->Front;
-        if (InputHandler::isKeyPressed("KeyA"))
-            ourCamera->Position += glm::vec3(-1.0f * deltaTime, 0.0f, -1.0f * deltaTime) * ourCamera->Right;
-        if (InputHandler::isKeyPressed("KeyD"))
-            ourCamera->Position += glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Right;
-    }
-
-    if (InputHandler::isMousePressed(MOUSE_LEFT))
-        emscripten_request_pointerlock("canvas", EM_TRUE);
-
-    if (InputHandler::isKeyPressed("KeyC") && !freeCamLock) {
-        ourCamera->freeCam = !ourCamera->freeCam;
-        ourCamera->Yaw = rotation.y;
-        freeCamLock = true;
-    }
-    if (InputHandler::isKeyReleased("KeyC") && freeCamLock) {
-        freeCamLock = false;
-    }
-
-    if (InputHandler::isMousePressed(MOUSE_LEFT) && checkPointerLock() && !breakLock) {
-        glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
-        glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
-        RaycastResult obj = Main::physicsEngine->raycast(3.0f, p, r);
-        if (obj.hit) {
-            // std::shared_ptr<AirObject> air = std::make_shared<AirObject>(obj.object->position, obj.object->rotation);
-            // Main::chunks[obj.chunkpos]->addBlock(obj.blockpos, air);
-            // Main::chunks[obj.chunkpos]->initTranslations();
-            EditChunk packet;
-            packet.chunkpos = obj.chunkpos;
-            packet.blockpos = obj.blockpos;
-            packet.id = 0;
+    if (Main::serverConnected) {
+        glm::vec3 rotation = Main::localPlayer->object->rotation;
+        if (!ourCamera->freeCam) {
+            glm::vec3 totalvelocity = glm::vec3(0.0f, 0.0f, 0.0f);
+            if (InputHandler::isKeyPressed("KeyW"))
+                totalvelocity += glm::vec3(0.05f, 0.0f, 0.0f);
+            if (InputHandler::isKeyPressed("KeyS"))
+                totalvelocity += glm::vec3(-0.05f, 0.0f, 0.0f);
+            if (InputHandler::isKeyPressed("KeyA"))
+                totalvelocity += glm::vec3(0.0f, 0.0f, -0.05f);
+            if (InputHandler::isKeyPressed("KeyD"))
+                totalvelocity += glm::vec3(0.0f, 0.0f, 0.05f);
+            Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, totalvelocity, glm::vec3(maxH, 0.1f, maxH));
+            if (InputHandler::isKeyPressed("Space") && Main::physicsEngine->isOnFoot(Main::localPlayer->object)) {
+                Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3(maxH, 0.1f, maxH));
+            }
+            // if (Main::physicsEngine->getVelocity(Main::localPlayer->object) != glm::vec3(0.0f, 0.0f, 0.0f)) {
+            PlayerAuthInput packet;
             SocketClient::sendPacket(&packet);
+            // }
         }
-        else { std::cout << "nothing" << std::endl; }
+        else {
+            if (InputHandler::isKeyPressed("KeyW"))
+                ourCamera->Position += glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Front;
+            if (InputHandler::isKeyPressed("KeyS"))
+                ourCamera->Position += glm::vec3(-1.0f * deltaTime, 0.0f, -1.0f * deltaTime) * ourCamera->Front;
+            if (InputHandler::isKeyPressed("KeyA"))
+                ourCamera->Position += glm::vec3(-1.0f * deltaTime, 0.0f, -1.0f * deltaTime) * ourCamera->Right;
+            if (InputHandler::isKeyPressed("KeyD"))
+                ourCamera->Position += glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Right;
+        }
 
-        breakLock = true;
-    }
-    if (InputHandler::isMouseReleased(MOUSE_LEFT) && breakLock) {
-        breakLock = false;
-    }
+        if (InputHandler::isMousePressed(MOUSE_LEFT))
+            emscripten_request_pointerlock("canvas", EM_TRUE);
 
-    if (InputHandler::isMousePressed(MOUSE_RIGHT) && checkPointerLock() && !placeLock) {
-        glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
-        glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
-        RaycastResult obj = Main::physicsEngine->raycast(4.0f, p, r);
-        if (obj.hit) {
-            if (!Main::physicsEngine->possibleCollision(obj.prevobject->position, glm::vec3(0.5f, 0.5f, 0.5f), Main::localPlayer->object)) {
-                std::shared_ptr<BlockObject> wood = std::make_shared<BlockObject>(obj.prevobject->position, obj.prevobject->rotation, 0, 4, true, glm::vec3(0.5f, 0.5f, 0.5f));
-                // std::cout << obj.prevchunkpos.x << " " << obj.prevchunkpos.y << " " << obj.prevchunkpos.z << std::endl;
-                // std::cout << obj.prevblockpos.x << " " << obj.prevblockpos.y << " " << obj.prevblockpos.z << std::endl;
-                // Main::chunks[obj.prevchunkpos]->addBlock(obj.prevblockpos, wood);
-                // Main::chunks[obj.prevchunkpos]->initTranslations();
+        if (InputHandler::isKeyPressed("KeyC") && !freeCamLock) {
+            ourCamera->freeCam = !ourCamera->freeCam;
+            ourCamera->Yaw = rotation.y;
+            freeCamLock = true;
+        }
+        if (InputHandler::isKeyReleased("KeyC") && freeCamLock) {
+            freeCamLock = false;
+        }
+
+        if (InputHandler::isMousePressed(MOUSE_LEFT) && checkPointerLock() && !breakLock) {
+            glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
+            glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
+            RaycastResult obj = Main::physicsEngine->raycast(3.0f, p, r);
+            if (obj.hit) {
+                // std::shared_ptr<AirObject> air = std::make_shared<AirObject>(obj.object->position, obj.object->rotation);
+                // Main::chunks[obj.chunkpos]->addBlock(obj.blockpos, air);
+                // Main::chunks[obj.chunkpos]->initTranslations();
                 EditChunk packet;
-                packet.chunkpos = obj.prevchunkpos;
-                packet.blockpos = obj.prevblockpos;
-                packet.id = 4;
+                packet.chunkpos = obj.chunkpos;
+                packet.blockpos = obj.blockpos;
+                packet.id = 0;
                 SocketClient::sendPacket(&packet);
             }
-            else { std::cout << "blocked" << std::endl; }
-        }
-        else { std::cout << "nothing" << std::endl; }
+            else { std::cout << "nothing" << std::endl; }
 
-        placeLock = true;
-    }
-    if (InputHandler::isMouseReleased(MOUSE_RIGHT) && placeLock) {
-        placeLock = false;
+            breakLock = true;
+        }
+        if (InputHandler::isMouseReleased(MOUSE_LEFT) && breakLock) {
+            breakLock = false;
+        }
+
+        if (InputHandler::isMousePressed(MOUSE_RIGHT) && checkPointerLock() && !placeLock) {
+            glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
+            glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
+            RaycastResult obj = Main::physicsEngine->raycast(4.0f, p, r);
+            if (obj.hit) {
+                if (!Main::physicsEngine->possibleCollision(obj.prevobject->position, glm::vec3(0.5f, 0.5f, 0.5f), Main::localPlayer->object)) {
+                    std::shared_ptr<BlockObject> wood = std::make_shared<BlockObject>(obj.prevobject->position, obj.prevobject->rotation, 0, 4, true, glm::vec3(0.5f, 0.5f, 0.5f));
+                    // std::cout << obj.prevchunkpos.x << " " << obj.prevchunkpos.y << " " << obj.prevchunkpos.z << std::endl;
+                    // std::cout << obj.prevblockpos.x << " " << obj.prevblockpos.y << " " << obj.prevblockpos.z << std::endl;
+                    // Main::chunks[obj.prevchunkpos]->addBlock(obj.prevblockpos, wood);
+                    // Main::chunks[obj.prevchunkpos]->initTranslations();
+                    EditChunk packet;
+                    packet.chunkpos = obj.prevchunkpos;
+                    packet.blockpos = obj.prevblockpos;
+                    packet.id = 4;
+                    SocketClient::sendPacket(&packet);
+                }
+                else { std::cout << "blocked" << std::endl; }
+            }
+            else { std::cout << "nothing" << std::endl; }
+
+            placeLock = true;
+        }
+        if (InputHandler::isMouseReleased(MOUSE_RIGHT) && placeLock) {
+            placeLock = false;
+        }
     }
 }
 
@@ -369,13 +373,12 @@ void postRender() {
 }
 
 void mainLoop() {
-    if (!Main::serverConnected) {
-        return;
+
+    if (Main::serverConnected) {
+        preRender();
+
+        render();
     }
-
-    preRender();
-
-    render();
 
     postRender();
 
@@ -439,17 +442,6 @@ int main() {
     Main::fontManager = new FontManager();
     Main::fontManager->init("/assets/fonts/montserrat.ttf");
 
-    Main::guiManager = new GUIManager();
-    std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int){}, 0, 20, Main::fontManager);
-    fpscounter->setText("FPS: 0", glm::vec3(0.0f, 0.0f, 0.0f));
-    Main::guiManager->addElement(fpscounter);
-    std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int){}, 0, 0, Main::fontManager);
-    crosshair->setText("+", glm::vec3(1.0f, 1.0f, 1.0f));
-    Main::guiManager->addElement(crosshair);
-    std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int){}, 0, 40, Main::fontManager);
-    coords->setText("x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0", glm::vec3(0.0f, 0.0f, 0.0f));
-    Main::guiManager->addElement(coords);
-
     Main::vertexManager = new VertexManager();
     Main::vertexManager->initVBO(0, vertices, sizeof(vertices));
     Main::vertexManager->initVBO(1, playervertices, sizeof(playervertices));
@@ -469,6 +461,8 @@ int main() {
     Main::textureManager->endInit();
 
     L_SUBSCRIBE(TickEvent, [](TickEvent* event) {
+        if (!Main::serverConnected) { return; }
+
         Main::physicsEngine->step();
         if (!ourCamera->freeCam) {
             ourCamera->updateCameraPosition();
@@ -478,12 +472,50 @@ int main() {
         }
     });
 
+    Main::guiManager = new GUIManager();
+    std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int){}, 0, 20, Main::fontManager);
+    fpscounter->setText("FPS: 0", glm::vec3(0.0f, 0.0f, 0.0f));
+    Main::guiManager->addElement(fpscounter);
+    std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int){}, 0, 0, Main::fontManager);
+    crosshair->setText("+", glm::vec3(1.0f, 1.0f, 1.0f));
+    Main::guiManager->addElement(crosshair);
+    std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int){}, 0, 40, Main::fontManager);
+    coords->setText("x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0", glm::vec3(0.0f, 0.0f, 0.0f));
+    Main::guiManager->addElement(coords);
+    std::shared_ptr<EnterElement> ipenter = std::make_shared<EnterElement>("ipenter", [](int){}, 100, 200, Main::fontManager, 64, "localhost");
+    ipenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
+    ipenter->enteractive = true;
+    Main::guiManager->addElement(ipenter);
+
+    L_SUBSCRIBE(KeyEvent, [](KeyEvent* event) {
+        if (event->state) {
+            std::shared_ptr<Element> e = Main::guiManager->getElement("ipenter");
+
+            if (event->key == "Enter") {
+                Main::serverAddress = dynamic_cast<EnterElement*>(e.get())->text;
+                SocketClient::connect();
+                dynamic_cast<EnterElement*>(e.get())->enteractive = false;
+                dynamic_cast<EnterElement*>(e.get())->active = false;
+            }
+
+            if (event->key == "Backspace") {
+                dynamic_cast<EnterElement*>(e.get())->removeChar();
+            }
+
+            if (strlen(event->code) > 1) { return; }
+
+            int keycode = (int)*(event->code);
+            std::cout << strlen(event->code) << std::endl;
+            dynamic_cast<EnterElement*>(e.get())->addChar((char)keycode);
+        }
+    });
+
     Main::physicsEngine = std::make_unique<PhysicsEngine>(&Main::chunks);
 
     // Main::isSingleplayer = true;
     // Main::serverInstance.setCallback(SocketClient::on_message);
     // SocketClient::on_open();
-    SocketClient::connect();
+    // SocketClient::connect();
 
     Main::localPlayer = std::make_shared<Entity>();
     Main::localPlayer->uuid = "local";

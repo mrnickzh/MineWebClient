@@ -36,8 +36,15 @@ EM_BOOL remote_message(int type, const EmscriptenWebSocketMessageEvent *e, void 
 }
 
 void SocketClient::connect() {
+    if (Main::serverAddress == "localhost") {
+        Main::isSingleplayer = true;
+        Main::serverInstance.setCallback(on_message);
+        on_open();
+        return;
+    }
+
     EmscriptenWebSocketCreateAttributes attr = {
-            .url = "ws://localhost:20202",
+            .url = Main::serverAddress.c_str(),
             .protocols = NULL,
             .createOnMainThread = EM_FALSE
     };

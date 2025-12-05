@@ -28,6 +28,7 @@ namespace Main {
     inline bool isSingleplayer = false;
     inline bool serverConnected = false;
     inline Server& serverInstance = Server::getInstance();
+    inline std::string serverAddress = "localhost";
 
     inline std::shared_ptr<Entity> localPlayer;
     inline std::vector<std::shared_ptr<Entity>> entities;
