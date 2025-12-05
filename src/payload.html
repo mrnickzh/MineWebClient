@@ -51,6 +51,9 @@
         })(),
         onRuntimeInitialized: function() {
             console.log("init");
+        },
+        setStatus: function(text) {
+            document.getElementById('preloader').innerHTML = `<p>${text}</p>`;
         }
     };
 </script>
