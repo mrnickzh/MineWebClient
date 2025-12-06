@@ -13,10 +13,12 @@ namespace PacketHelper {
 
     inline int getPacketId(Packet* packet) {
         for (const auto& pair : packetCreators) {
-            if (typeid(*packet) == typeid(*pair.second())) {
-
+            Packet* pkt = pair.second();
+            if (typeid(*packet) == typeid(*pkt)) {
+                delete pkt;
                 return pair.first;
             }
+            delete pkt;
         }
         return -1;
     }
@@ -40,7 +42,7 @@ namespace PacketHelper {
         return buffer.toByteArray();
     }
 
-    inline Packet* decodePacket(const std::vector<uint8_t> data) {
+    inline void decodePacket(const std::vector<uint8_t> data) {
         ByteBuf buffer(65536);
 
         buffer.fromByteArray(data);
@@ -48,7 +50,7 @@ namespace PacketHelper {
         Packet* packet = createPacket(id);
         if (packet) {
             packet->receive(buffer);
+            delete packet;
         }
-        return packet;
     }
 }
