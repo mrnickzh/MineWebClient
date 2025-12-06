@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <iostream>
 #include <GLES3/gl3.h>
 
 #define GLM_FORCE_PURE
@@ -11,8 +12,31 @@
 
 // Default camera values
 const float SENSITIVITY =  0.1f;
-const float ZOOM        =  45.0f;
+const float ZOOM        =  60.0f;
 
+struct Plane
+{
+    // unit vector
+    glm::vec3 normal = { 0.0f, 1.0f, 0.0f };
+
+    // distance from origin to the nearest point in the plane
+    float     distance = 0.0f;
+
+    Plane() = default;
+    Plane(const glm::vec3& p1, const glm::vec3& norm) : normal(glm::normalize(norm)), distance(glm::dot(normal, p1)) {}
+};
+
+struct Frustum
+{
+    Plane topFace;
+    Plane bottomFace;
+
+    Plane rightFace;
+    Plane leftFace;
+
+    Plane farFace;
+    Plane nearFace;
+};
 
 // An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
 class Camera
@@ -69,10 +93,10 @@ public:
         // make sure that when pitch is out of bounds, screen doesn't get flipped
         if (constrainPitch)
         {
-            if (Pitch > 89.0f)
-                Pitch = 89.0f;
-            if (Pitch < -89.0f)
-                Pitch = -89.0f;
+            if (Pitch > 85.0f)
+                Pitch = 85.0f;
+            if (Pitch < -85.0f)
+                Pitch = -85.0f;
         }
 
         if (Yaw > 180.0f) {
@@ -95,8 +119,8 @@ public:
         Zoom -= (float)yoffset;
         if (Zoom < 1.0f)
             Zoom = 1.0f;
-        if (Zoom > 45.0f)
-            Zoom = 45.0f;
+        if (Zoom > 60.0f)
+            Zoom = 60.0f;
     }
 
     // calculates the front vector from the Camera's (updated) Euler Angles
@@ -111,5 +135,22 @@ public:
         // also re-calculate the Right and Up vector
         Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
         Up    = glm::normalize(glm::cross(Right, Front));
+    }
+
+    Frustum createFrustumFromCamera(float fovY, float aspect, float zNear, float zFar)
+    {
+        Frustum frustum;
+        float halfVSide = zFar * tanf(fovY * .5f);
+        float halfHSide = halfVSide * aspect;
+        glm::vec3 frontMultFar = zFar * Front;
+
+        frustum.nearFace = { Position + zNear * Front, Front };
+        frustum.farFace = { Position + frontMultFar, -Front };
+        frustum.rightFace = { Position, glm::cross(Up, frontMultFar + Right * halfHSide) };
+        frustum.leftFace = { Position, glm::cross(frontMultFar - Right * halfHSide, Up) };
+        frustum.topFace = { Position, glm::cross(Right, frontMultFar - Up * halfVSide) };
+        frustum.bottomFace = { Position, glm::cross(frontMultFar + Up * halfVSide, Right) };
+
+        return frustum;
     }
 };

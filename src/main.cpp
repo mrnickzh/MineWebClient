@@ -144,6 +144,9 @@ bool freeCamLock = false;
 bool placeLock = false;
 bool breakLock = false;
 
+int renderDistance = 5;
+Frustum cameraFrustum;
+
 bool checkPointerLock() {
     EmscriptenPointerlockChangeEvent lastChangeEvent;
     auto haveLockInfo = emscripten_get_pointerlock_status(&lastChangeEvent) == EMSCRIPTEN_RESULT_SUCCESS;
@@ -193,13 +196,17 @@ void processInput()
         }
         else {
             if (InputHandler::isKeyPressed("KeyW"))
-                ourCamera->Position += glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Front;
+                ourCamera->Position += glm::vec3(2.0f * deltaTime, 0.0f, 2.0f * deltaTime) * ourCamera->Front;
             if (InputHandler::isKeyPressed("KeyS"))
-                ourCamera->Position += glm::vec3(-1.0f * deltaTime, 0.0f, -1.0f * deltaTime) * ourCamera->Front;
+                ourCamera->Position += glm::vec3(-2.0f * deltaTime, 0.0f, -2.0f * deltaTime) * ourCamera->Front;
             if (InputHandler::isKeyPressed("KeyA"))
-                ourCamera->Position += glm::vec3(-1.0f * deltaTime, 0.0f, -1.0f * deltaTime) * ourCamera->Right;
+                ourCamera->Position += glm::vec3(-2.0f * deltaTime, 0.0f, -2.0f * deltaTime) * ourCamera->Right;
             if (InputHandler::isKeyPressed("KeyD"))
-                ourCamera->Position += glm::vec3(1.0f * deltaTime, 0.0f, 1.0f * deltaTime) * ourCamera->Right;
+                ourCamera->Position += glm::vec3(2.0f * deltaTime, 0.0f, 2.0f * deltaTime) * ourCamera->Right;
+            if (InputHandler::isKeyPressed("Space"))
+                ourCamera->Position += glm::vec3(0.0f, 2.0f * deltaTime, 0.0f) * ourCamera->Up;
+            if (InputHandler::isKeyPressed("ShiftLeft"))
+                ourCamera->Position += glm::vec3(0.0f, -2.0f * deltaTime, 0.0f) * ourCamera->Up;
         }
 
         if (InputHandler::isMousePressed(MOUSE_LEFT))
@@ -275,7 +282,7 @@ void preRender() {
     Main::ourShader->use();
 
     glm::mat4 projection;
-    projection = glm::perspective(glm::radians(45.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
 
     glUniformMatrix4fv(Main::ourShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
     glUniformMatrix4fv(Main::ourShader->uniforms["view"], 1, GL_FALSE, &ourCamera->GetViewMatrix()[0][0]);
@@ -290,11 +297,15 @@ void render() {
     std::shared_ptr<Element> e = Main::guiManager->getElement("coords");
     dynamic_cast<TextElement*>(e.get())->setText(coordsstr, glm::vec3(0.0f, 0.0f, 0.0f));
 
+    if (!ourCamera->freeCam) {
+        cameraFrustum = ourCamera->createFrustumFromCamera(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
+    }
+
     // std::cout << playerChunk.x << " " << playerChunk.y << " " << playerChunk.z << std::endl;
 
-    for (int i = -1; i < 2; i++) {
-        for (int j = -1; j < 2; j++) {
-            for (int k = -1; k < 2; k++) {
+    for (int i = -renderDistance; i <= renderDistance; i++) {
+        for (int j = -renderDistance; j <= renderDistance; j++) {
+            for (int k = -renderDistance; k <= renderDistance; k++) {
                 glm::vec3 requestedChunk = glm::vec3(playerChunk.x + (float)i, playerChunk.y + (float)j, playerChunk.z + (float)k);
 
                 if (Main::chunks.find(requestedChunk) == Main::chunks.end()) {
@@ -312,7 +323,10 @@ void render() {
                 // }
 
                 std::shared_ptr<ChunkMap> chunk = Main::chunks[requestedChunk];
-                chunk->renderChunk();
+
+                if (chunk->checkCull(cameraFrustum, requestedChunk)) {
+                    chunk->renderChunk();
+                }
             }
         }
     }
@@ -488,7 +502,7 @@ int main() {
     Main::guiManager->addElement(ipenter);
 
     L_SUBSCRIBE(KeyEvent, [](KeyEvent* event) {
-        if (event->state) {
+        if (event->state && !Main::serverConnected) {
             std::shared_ptr<Element> e = Main::guiManager->getElement("ipenter");
 
             if (event->key == "Enter") {
@@ -519,7 +533,7 @@ int main() {
 
     Main::localPlayer = std::make_shared<Entity>();
     Main::localPlayer->uuid = "local";
-    Main::localPlayer->object = std::make_shared<EntityObject>(glm::vec3(0.0, 1.0f, 0.0), glm::vec3(0.0f, 0.0f, 0.0f), 1, 49, true, glm::vec3(0.25f, 0.75f, 0.25f));
+    Main::localPlayer->object = std::make_shared<EntityObject>(glm::vec3(0.0, 4.0f, 0.0), glm::vec3(0.0f, 0.0f, 0.0f), 1, 49, true, glm::vec3(0.25f, 0.75f, 0.25f));
 
     Main::physicsEngine->registerObject(Main::localPlayer->object, 1.0f);
 

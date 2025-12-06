@@ -4,6 +4,7 @@
 
 #include "../Objects/Object.hpp"
 #include "vec3Comparator.hpp"
+#include "../Camera.hpp"
 
 class ChunkMap {
 public:
@@ -22,4 +23,5 @@ public:
     std::shared_ptr<Object> getBlock(glm::vec3 blockPos);
     void initTranslations();
     void renderChunk();
+    bool checkCull(Frustum& frustum, glm::vec3 chunkpos);
 };

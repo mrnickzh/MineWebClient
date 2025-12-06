@@ -104,3 +104,24 @@ void ChunkMap::renderChunk() {
 
     glBindVertexArray(0);
 }
+
+bool ChunkMap::checkCull(Frustum& frustum, glm::vec3 chunkpos) {
+    glm::vec3 AA = glm::vec3(chunkpos.x * 8.0f, chunkpos.y * 8.0f, chunkpos.z * 8.0f);
+    glm::vec3 BB = glm::vec3(chunkpos.x * 8.0f + 8.0f, chunkpos.y * 8.0f + 8.0f, chunkpos.z * 8.0f + 8.0f);
+
+    glm::vec3 corners[8] = {glm::vec3(AA.x, AA.y, AA.z), glm::vec3(BB.x, BB.y, BB.z), glm::vec3(BB.x, AA.y, AA.z), glm::vec3(AA.x, BB.y, AA.z), glm::vec3(AA.x, AA.y, BB.z), glm::vec3(BB.x, BB.y, AA.z), glm::vec3(BB.x, AA.y, BB.z), glm::vec3(AA.x, BB.y, BB.z)};
+    Plane planes[6] = {frustum.farFace, frustum.nearFace, frustum.bottomFace, frustum.topFace, frustum.leftFace, frustum.rightFace};
+
+    for (int i = 0; i < 6; i++) {
+        int out = 0;
+        Plane frustumPlane = planes[i];
+        for (int j = 0; j < 8; j++) {
+            glm::vec3 point = corners[j];
+            float result = glm::dot(frustumPlane.normal, point) - frustumPlane.distance;
+            out += (result < 0.0f ? 1 : 0);
+        }
+        if (out == 8) { return false; }
+    }
+
+    return true;
+}
