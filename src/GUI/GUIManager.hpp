@@ -13,6 +13,7 @@
 class GUIManager {
 public:
     std::vector<std::shared_ptr<Element>> registeredElements;
+    bool active = true;
 
     void addElement(std::shared_ptr<Element> element);
     void removeElement(std::shared_ptr<Element> element);

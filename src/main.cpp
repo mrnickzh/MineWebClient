@@ -209,8 +209,9 @@ void processInput()
                 ourCamera->Position += glm::vec3(0.0f, -2.0f * deltaTime, 0.0f) * ourCamera->Up;
         }
 
-        if (InputHandler::isMousePressed(MOUSE_LEFT))
+        if (InputHandler::isMousePressed(MOUSE_LEFT) && Main::serverConnected) {
             emscripten_request_pointerlock("canvas", EM_TRUE);
+        }
 
         if (InputHandler::isKeyPressed("KeyC") && !freeCamLock) {
             ourCamera->freeCam = !ourCamera->freeCam;
@@ -294,7 +295,7 @@ void render() {
     glm::vec3 playerChunk = glm::vec3(floor(playerPos.x / 8.0f), floor(playerPos.y / 8.0f), floor(playerPos.z / 8.0f));
 
     std::string coordsstr = "x: " + std::to_string(playerPos.x) + " y: " + std::to_string(playerPos.y) + " z: " + std::to_string(playerPos.z) + " cx: " + std::to_string((int)playerChunk.x) + " cy: " + std::to_string((int)playerChunk.y) + " cz: " + std::to_string((int)playerChunk.z);
-    std::shared_ptr<Element> e = Main::guiManager->getElement("coords");
+    std::shared_ptr<Element> e = Main::gameUIManager->getElement("coords");
     dynamic_cast<TextElement*>(e.get())->setText(coordsstr, glm::vec3(0.0f, 0.0f, 0.0f));
 
     if (!ourCamera->freeCam) {
@@ -365,7 +366,8 @@ void postRender() {
     glUniformMatrix4fv(Main::fontShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
     glUniform1i(Main::fontShader->uniforms["textureSampler"], 1);
 
-    Main::guiManager->render();
+    Main::menuManager->render();
+    Main::gameUIManager->render();
 
     int stateMask = 0x0000;
 
@@ -380,18 +382,23 @@ void postRender() {
     if (InputHandler::isKeyPressed("ShiftLeft"))
         stateMask |= SHIFT_FLAG;
 
-    Main::guiManager->poll(stateMask);
+    Main::menuManager->poll(stateMask);
+    Main::gameUIManager->poll(stateMask);
 
-    std::shared_ptr<Element> e = Main::guiManager->getElement("crosshair");
+    std::shared_ptr<Element> e = Main::gameUIManager->getElement("crosshair");
     e->setPosition(windowWidth/2-10, windowHeight/2-10);
 }
 
 void mainLoop() {
-
     if (Main::serverConnected) {
         preRender();
 
         render();
+    }
+
+    if (!Main::serverConnected) {
+        glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     postRender();
@@ -405,7 +412,7 @@ void mainLoop() {
     lastFrame = currentFrame;
 
     int fps = (int)std::round(1.0f / deltaTime);
-    std::shared_ptr<Element> e = Main::guiManager->getElement("fpscounter");
+    std::shared_ptr<Element> e = Main::gameUIManager->getElement("fpscounter");
     dynamic_cast<TextElement*>(e.get())->setText("FPS: " + std::to_string(fps), glm::vec3(std::max(1.0f - ((float)fps / 255.0f), 0.0f), 0.0f, 0.0f));
 }
 
@@ -438,7 +445,7 @@ int main() {
     PacketHelper::registerPacket(3, []() { return new EntityAction(); });
     PacketHelper::registerPacket(4, []() { return new PlayerAuthInput(); });
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     L_SUBSCRIBE(MouseMoveEvent, [](MouseMoveEvent* event) {
         int x = event->posx;
@@ -451,7 +458,7 @@ int main() {
     });
 
     Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}});
-    Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}});
+    Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}, {"background", 0}});
 
     Main::fontManager = new FontManager();
     Main::fontManager->init("/assets/fonts/montserrat.ttf");
@@ -486,30 +493,33 @@ int main() {
         }
     });
 
-    Main::guiManager = new GUIManager();
+    Main::menuManager = new GUIManager();
+    Main::gameUIManager = new GUIManager();
+    Main::gameUIManager->active = false;
     std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int){}, 0, 20, Main::fontManager);
     fpscounter->setText("FPS: 0", glm::vec3(0.0f, 0.0f, 0.0f));
-    Main::guiManager->addElement(fpscounter);
+    Main::gameUIManager->addElement(fpscounter);
     std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int){}, 0, 0, Main::fontManager);
     crosshair->setText("+", glm::vec3(1.0f, 1.0f, 1.0f));
-    Main::guiManager->addElement(crosshair);
+    Main::gameUIManager->addElement(crosshair);
     std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int){}, 0, 40, Main::fontManager);
     coords->setText("x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0", glm::vec3(0.0f, 0.0f, 0.0f));
-    Main::guiManager->addElement(coords);
+    Main::gameUIManager->addElement(coords);
     std::shared_ptr<EnterElement> ipenter = std::make_shared<EnterElement>("ipenter", [](int){}, 100, 200, Main::fontManager, 64, "localhost");
     ipenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
     ipenter->enteractive = true;
-    Main::guiManager->addElement(ipenter);
+    Main::menuManager->addElement(ipenter);
 
     L_SUBSCRIBE(KeyEvent, [](KeyEvent* event) {
         if (event->state && !Main::serverConnected) {
-            std::shared_ptr<Element> e = Main::guiManager->getElement("ipenter");
+            std::shared_ptr<Element> e = Main::menuManager->getElement("ipenter");
 
             if (event->key == "Enter") {
                 Main::serverAddress = dynamic_cast<EnterElement*>(e.get())->text;
                 SocketClient::connect();
                 dynamic_cast<EnterElement*>(e.get())->enteractive = false;
-                dynamic_cast<EnterElement*>(e.get())->active = false;
+                Main::menuManager->active = false;
+                Main::gameUIManager->active = true;
             }
 
             if (event->key == "Backspace") {

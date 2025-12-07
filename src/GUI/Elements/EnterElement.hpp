@@ -10,6 +10,7 @@ class EnterElement : public Element {
 public:
     std::string text;
     GLuint vao, vbo, uv = 0;
+    GLuint bvao, bvbo, buv = 0;
     FontManager* fontManager;
     int count = 0;
     glm::vec3 color = glm::vec3(0.0f, 0.0f, 0.0f);

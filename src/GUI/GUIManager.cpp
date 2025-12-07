@@ -15,12 +15,14 @@ std::shared_ptr<Element> GUIManager::getElement(std::string elementid) {
 }
 
 void GUIManager::poll(int stateMask) {
+    if (!active) { return; }
     for (auto& element : registeredElements) {
         element->callback(stateMask);
     }
 }
 
 void GUIManager::render() {
+    if (!active) { return; }
     for (auto& element : registeredElements) {
         element->render();
     }

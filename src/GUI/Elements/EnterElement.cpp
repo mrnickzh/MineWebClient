@@ -5,11 +5,17 @@ EnterElement::EnterElement(std::string id, std::function<void(int)> callback, in
     maxlen = ml;
     text = deftext;
     count = fontManager->genGlyphs(text, x, y, vao, vbo, uv);
+    fontManager->genBackground(x - 5, y - 25, (10 * maxlen), 30, bvao, bvbo, buv);
 }
 
 void EnterElement::render() {
     if (!active) { return; }
-    if (text.empty()) { return; }
+
+    glUniform1i(Main::fontShader->uniforms["background"], 1);
+    glUniform3f(Main::fontShader->uniforms["color"], 0.5f, 0.5f, 0.5f);
+    fontManager->renderBackground(bvao, bvbo, buv);
+    glUniform1i(Main::fontShader->uniforms["background"], 0);
+
     glUniform3f(Main::fontShader->uniforms["color"], color.r, color.g, color.b);
     fontManager->render(vao, vbo, uv, count);
 }
