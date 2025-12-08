@@ -33,7 +33,7 @@
     </style>
 </head>
 <body>
-<div id="preloader">Loading...</div>
+<div id="preloader"><progress id="progressBar"></progress></div>
 <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
 
 <script>
@@ -53,7 +53,15 @@
             console.log("init");
         },
         setStatus: function(text) {
-            document.getElementById('preloader').innerHTML = `<p>${text}</p>`;
+            let totalLoaded = 0;
+            let totalSize = 0;
+
+            for (const download of Object.values(Module['dataFileDownloads'])) {
+                totalLoaded += download.loaded;
+                totalSize += download.total;
+            }
+
+            document.getElementById('preloader').innerHTML = `<progress id="progressBar" value="${totalLoaded}" max="${totalSize}"></progress>`
         }
     };
 </script>
