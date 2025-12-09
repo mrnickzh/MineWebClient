@@ -303,11 +303,13 @@ void render() {
     }
 
     // std::cout << playerChunk.x << " " << playerChunk.y << " " << playerChunk.z << std::endl;
+    std::set<glm::vec3, vec3Comparator> loadedchunks;
 
     for (int i = -renderDistance; i <= renderDistance; i++) {
         for (int j = -renderDistance; j <= renderDistance; j++) {
             for (int k = -renderDistance; k <= renderDistance; k++) {
                 glm::vec3 requestedChunk = glm::vec3(playerChunk.x + (float)i, playerChunk.y + (float)j, playerChunk.z + (float)k);
+                loadedchunks.insert(requestedChunk);
 
                 if (Main::chunks.find(requestedChunk) == Main::chunks.end()) {
                     if (std::find(Main::requestedChunks.begin(), Main::requestedChunks.end(), requestedChunk) == Main::requestedChunks.end()) {
@@ -329,6 +331,14 @@ void render() {
                     chunk->renderChunk();
                 }
             }
+        }
+    }
+
+    for (auto& c : Main::chunks) {
+        if (!(loadedchunks.contains(c.first))) {
+            Main::chunks.erase(c.first);
+            auto it = std::find(Main::requestedChunks.begin(), Main::requestedChunks.end(), c.first);
+            if (it != Main::requestedChunks.end()) { Main::requestedChunks.erase(it); }
         }
     }
 
