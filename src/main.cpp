@@ -196,17 +196,17 @@ void processInput()
         }
         else {
             if (InputHandler::isKeyPressed("KeyW"))
-                ourCamera->Position += glm::vec3(2.0f * deltaTime, 0.0f, 2.0f * deltaTime) * ourCamera->Front;
+                ourCamera->Position += glm::vec3(5.0f * deltaTime, 0.0f, 5.0f * deltaTime) * ourCamera->Front;
             if (InputHandler::isKeyPressed("KeyS"))
-                ourCamera->Position += glm::vec3(-2.0f * deltaTime, 0.0f, -2.0f * deltaTime) * ourCamera->Front;
+                ourCamera->Position += glm::vec3(-5.0f * deltaTime, 0.0f, -5.0f * deltaTime) * ourCamera->Front;
             if (InputHandler::isKeyPressed("KeyA"))
-                ourCamera->Position += glm::vec3(-2.0f * deltaTime, 0.0f, -2.0f * deltaTime) * ourCamera->Right;
+                ourCamera->Position += glm::vec3(-5.0f * deltaTime, 0.0f, -5.0f * deltaTime) * ourCamera->Right;
             if (InputHandler::isKeyPressed("KeyD"))
-                ourCamera->Position += glm::vec3(2.0f * deltaTime, 0.0f, 2.0f * deltaTime) * ourCamera->Right;
+                ourCamera->Position += glm::vec3(5.0f * deltaTime, 0.0f, 5.0f * deltaTime) * ourCamera->Right;
             if (InputHandler::isKeyPressed("Space"))
-                ourCamera->Position += glm::vec3(0.0f, 2.0f * deltaTime, 0.0f) * ourCamera->Up;
+                ourCamera->Position += glm::vec3(0.0f, 5.0f * deltaTime, 0.0f) * ourCamera->Up;
             if (InputHandler::isKeyPressed("ShiftLeft"))
-                ourCamera->Position += glm::vec3(0.0f, -2.0f * deltaTime, 0.0f) * ourCamera->Up;
+                ourCamera->Position += glm::vec3(0.0f, -5.0f * deltaTime, 0.0f) * ourCamera->Up;
         }
 
         if (InputHandler::isMousePressed(MOUSE_LEFT) && Main::serverConnected) {

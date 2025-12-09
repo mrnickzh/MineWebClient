@@ -11,9 +11,28 @@ ChunkMap::ChunkMap() {
     instanceCount = 0;
     for (auto& b : blocks) {
         if (typeid((*b.second)) != typeid(AirObject)) {
-            translations[instanceCount] = b.second->model;
-            textures[instanceCount] = (float)b.second->texture;
-            instanceCount++;
+            bool exposed = false;
+            float bx = b.first.x;
+            float by = b.first.y;
+            float bz = b.first.z;
+
+            if (bx != 0.0f && by != 0.0f && bz != 0.0f && bx != 7.0f && by != 7.0f && bz != 7.0f) {
+                if (!(blocks[glm::vec3(bx - 1.0f, by, bz)]->cancollide)) { exposed = true; }
+                if (!(blocks[glm::vec3(bx + 1.0f, by, bz)])->cancollide) { exposed = true; }
+                if (!(blocks[glm::vec3(bx, by - 1.0f, bz)]->cancollide)) { exposed = true; }
+                if (!(blocks[glm::vec3(bx, by + 1.0f, bz)]->cancollide)) { exposed = true; }
+                if (!(blocks[glm::vec3(bx, by, bz - 1.0)]->cancollide)) { exposed = true; }
+                if (!(blocks[glm::vec3(bx, by, bz + 1.0f)]->cancollide)) { exposed = true; }
+            }
+            else {
+                exposed = true;
+            }
+
+            if (exposed) {
+                translations[instanceCount] = b.second->model;
+                textures[instanceCount] = (float)b.second->texture;
+                instanceCount++;
+            }
         }
     }
 
@@ -41,12 +60,30 @@ void ChunkMap::initTranslations() {
     memset(translations, 0, sizeof(translations));
     memset(textures, 0, sizeof(textures));
     instanceCount = 0;
-    // std::cout << blocks.size() << std::endl;
     for (auto& b : blocks) {
         if (typeid((*b.second)) != typeid(AirObject)) {
-            translations[instanceCount] = b.second->model;
-            textures[instanceCount] = (float)b.second->texture;
-            instanceCount++;
+            bool exposed = false;
+            float bx = b.first.x;
+            float by = b.first.y;
+            float bz = b.first.z;
+
+            if (bx != 0.0f && by != 0.0f && bz != 0.0f && bx != 7.0f && by != 7.0f && bz != 7.0f) {
+                if (!(blocks[glm::vec3(bx - 1.0f, by, bz)]->cancollide)) { exposed = true; }
+                if (!(blocks[glm::vec3(bx + 1.0f, by, bz)])->cancollide) { exposed = true; }
+                if (!(blocks[glm::vec3(bx, by - 1.0f, bz)]->cancollide)) { exposed = true; }
+                if (!(blocks[glm::vec3(bx, by + 1.0f, bz)]->cancollide)) { exposed = true; }
+                if (!(blocks[glm::vec3(bx, by, bz - 1.0)]->cancollide)) { exposed = true; }
+                if (!(blocks[glm::vec3(bx, by, bz + 1.0f)]->cancollide)) { exposed = true; }
+            }
+            else {
+                exposed = true;
+            }
+
+            if (exposed) {
+                translations[instanceCount] = b.second->model;
+                textures[instanceCount] = (float)b.second->texture;
+                instanceCount++;
+            }
         }
     }
 
