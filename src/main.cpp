@@ -143,8 +143,10 @@ GLuint shaderProgram;
 bool freeCamLock = false;
 bool placeLock = false;
 bool breakLock = false;
+bool saveLock = false;
+bool loadLock = false;
 
-int renderDistance = 5;
+int renderDistance = 3;
 Frustum cameraFrustum;
 
 bool checkPointerLock() {
@@ -160,6 +162,19 @@ bool checkPointerLock() {
     }
 
     return true;
+}
+
+extern "C" {
+    int load_world() {
+        Main::serverAddress = "localhost";
+        Main::serverInstance.getInstance().loadWorld();
+        SocketClient::connect();
+        std::shared_ptr<Element> e = Main::menuManager->getElement("ipenter");
+        dynamic_cast<EnterElement*>(e.get())->enteractive = false;
+        Main::menuManager->active = false;
+        Main::gameUIManager->active = true;
+        return 0;
+    }
 }
 
 EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
@@ -269,6 +284,24 @@ void processInput()
         }
         if (InputHandler::isMouseReleased(MOUSE_RIGHT) && placeLock) {
             placeLock = false;
+        }
+
+        if (InputHandler::isKeyPressed("KeyP") && !saveLock && Main::isSingleplayer) {
+            Main::serverInstance.saveWorld();
+            emscripten_run_script("saveFileFromMemoryFSToDisk('/world.mww','world.mww')");
+            saveLock = true;
+        }
+        if (InputHandler::isKeyReleased("KeyP") && saveLock) {
+            saveLock = false;
+        }
+    }
+    else {
+        if (InputHandler::isKeyPressed("KeyO") && !loadLock) {
+            emscripten_run_script("uploadSave()");
+            loadLock = true;
+        }
+        if (InputHandler::isKeyReleased("KeyO") && loadLock) {
+            loadLock = false;
         }
     }
 }

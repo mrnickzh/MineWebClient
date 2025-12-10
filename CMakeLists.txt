@@ -25,6 +25,7 @@ target_link_options(MineWebClient PRIVATE
         "SHELL:-s NO_EXIT_RUNTIME=1"
         "SHELL:-s ASSERTIONS=1"
         "SHELL:-s USE_GLFW=3"
+        "SHELL:-s USE_ZLIB=1"
         "SHELL:-s STB_IMAGE=1"
         "SHELL:-s FORCE_FILESYSTEM=1"
         "SHELL:-s USE_PTHREADS=1"
@@ -32,7 +33,10 @@ target_link_options(MineWebClient PRIVATE
         "SHELL:-s PTHREAD_POOL_SIZE=4"
         "SHELL:-s STACK_SIZE=16777216"
         "SHELL:-s INITIAL_MEMORY=134217728"
+        "SHELL:-s EXPORTED_FUNCTIONS=['_main','_load_world']"
+        "SHELL:-s EXPORTED_RUNTIME_METHODS=['ccall']"
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/assets@/assets"
+        # "SHELL:-s NO_DISABLE_EXCEPTION_CATCHING"
 )
 
 target_include_directories(MineWebClient PRIVATE
