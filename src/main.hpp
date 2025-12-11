@@ -18,6 +18,7 @@ namespace Main {
     inline VertexManager* vertexManager;
     inline TextureManager* textureManager;
     inline FontManager* fontManager;
+
     inline GUIManager* menuManager;
     inline GUIManager* gameUIManager;
 
@@ -33,4 +34,7 @@ namespace Main {
 
     inline std::shared_ptr<Entity> localPlayer;
     inline std::vector<std::shared_ptr<Entity>> entities;
+
+    inline int mouseX = 0;
+    inline int mouseY = 0;
 }

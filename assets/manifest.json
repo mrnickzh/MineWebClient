@@ -1,0 +1,13 @@
+{
+	"blocks": 
+	[
+		{"id": 1, "texture": "/assets/textures/stone.png"},
+		{"id": 2, "texture": "/assets/textures/dirt.png"},
+		{"id": 3, "texture": "/assets/textures/grass.png"},
+		{"id": 4, "texture": "/assets/textures/wood.png"}
+	],
+	"entities": 
+	[
+		{"id": 49, "texture": "/assets/textures/player.png"}
+	]
+}

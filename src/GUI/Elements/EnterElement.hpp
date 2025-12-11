@@ -14,10 +14,12 @@ public:
     FontManager* fontManager;
     int count = 0;
     glm::vec3 color = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 bcolor = glm::vec3(0.0f, 0.0f, 0.0f);
+    bool background = false;
     bool enteractive = false;
     int maxlen = 0;
 
-    EnterElement(std::string id, std::function<void(int)> callback, int x, int y, FontManager* fm, int ml, std::string deftext);
+    EnterElement(std::string id, std::function<void(int, int, int)> callback, int x, int y, FontManager* fm, int ml, std::string deftext, bool bg);
 
     void render() override;
     void addChar(const char chr);

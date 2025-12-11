@@ -19,5 +19,5 @@ public:
     void removeElement(std::shared_ptr<Element> element);
     std::shared_ptr<Element> getElement(std::string elementid);
     void render();
-    void poll(int stateMask);
+    void poll(int x, int y, int stateMask);
 };

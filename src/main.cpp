@@ -33,6 +33,7 @@
 #include "Protocol/Packets/HandShakePacket.hpp"
 #include "Protocol/Packets/PlayerAuthInput.hpp"
 #include "Utils/VertexManager.hpp"
+#include "../lib/json/json.hpp"
 
 float vertices[] = {
     // Back face
@@ -167,7 +168,7 @@ bool checkPointerLock() {
 extern "C" {
     int load_world() {
         Main::serverAddress = "localhost";
-        Main::serverInstance.getInstance().loadWorld();
+        Main::serverInstance.loadWorld();
         SocketClient::connect();
         std::shared_ptr<Element> e = Main::menuManager->getElement("ipenter");
         dynamic_cast<EnterElement*>(e.get())->enteractive = false;
@@ -182,6 +183,11 @@ EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     windowHeight = e->windowInnerHeight;
     glViewport(0, 0, windowWidth, windowHeight);
     glfwSetWindowSize(window, windowWidth, windowHeight);
+
+    std::shared_ptr<Element> gl = Main::menuManager->getElement("gamelabel");
+    dynamic_cast<TextElement*>(gl.get())->setPosition((windowWidth/2)-30, dynamic_cast<TextElement*>(gl.get())->y);
+    std::shared_ptr<Element> vl = Main::menuManager->getElement("verlabel");
+    dynamic_cast<TextElement*>(vl.get())->setPosition((windowWidth/2)-60, dynamic_cast<TextElement*>(vl.get())->y);
 
     return EM_TRUE;
 }
@@ -295,15 +301,6 @@ void processInput()
             saveLock = false;
         }
     }
-    else {
-        if (InputHandler::isKeyPressed("KeyO") && !loadLock) {
-            emscripten_run_script("uploadSave()");
-            loadLock = true;
-        }
-        if (InputHandler::isKeyReleased("KeyO") && loadLock) {
-            loadLock = false;
-        }
-    }
 }
 
 void preRender() {
@@ -329,7 +326,7 @@ void render() {
 
     std::string coordsstr = "x: " + std::to_string(playerPos.x) + " y: " + std::to_string(playerPos.y) + " z: " + std::to_string(playerPos.z) + " cx: " + std::to_string((int)playerChunk.x) + " cy: " + std::to_string((int)playerChunk.y) + " cz: " + std::to_string((int)playerChunk.z);
     std::shared_ptr<Element> e = Main::gameUIManager->getElement("coords");
-    dynamic_cast<TextElement*>(e.get())->setText(coordsstr, glm::vec3(0.0f, 0.0f, 0.0f));
+    dynamic_cast<TextElement*>(e.get())->setText(coordsstr);
 
     if (!ourCamera->freeCam) {
         cameraFrustum = ourCamera->createFrustumFromCamera(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
@@ -415,11 +412,34 @@ void postRender() {
     if (InputHandler::isKeyPressed("ShiftLeft"))
         stateMask |= SHIFT_FLAG;
 
-    Main::menuManager->poll(stateMask);
-    Main::gameUIManager->poll(stateMask);
+    Main::menuManager->poll(Main::mouseX, Main::mouseY, stateMask);
+    Main::gameUIManager->poll(Main::mouseX, Main::mouseY, stateMask);
 
     std::shared_ptr<Element> e = Main::gameUIManager->getElement("crosshair");
     e->setPosition(windowWidth/2-10, windowHeight/2-10);
+}
+
+void loadAssets() {
+    nlohmann::json assets;
+    std::ifstream manifestfile("/assets/manifest.json");
+
+    if (!manifestfile) {
+        std::cout << "no assets manifest found" << std::endl;
+    } else manifestfile >> assets;
+
+    for (auto& element : assets["blocks"].items()) {
+        nlohmann::json block = element.value();
+        int id = block["id"];
+        std::string texture = block["texture"];
+        Main::textureManager->addTexture(texture, id);
+    }
+
+    for (auto& element : assets["entities"].items()) {
+        nlohmann::json entity = element.value();
+        int id = entity["id"];
+        std::string texture = entity["texture"];
+        Main::textureManager->addTexture(texture, id);
+    }
 }
 
 void mainLoop() {
@@ -446,7 +466,8 @@ void mainLoop() {
 
     int fps = (int)std::round(1.0f / deltaTime);
     std::shared_ptr<Element> e = Main::gameUIManager->getElement("fpscounter");
-    dynamic_cast<TextElement*>(e.get())->setText("FPS: " + std::to_string(fps), glm::vec3(std::max(1.0f - ((float)fps / 255.0f), 0.0f), 0.0f, 0.0f));
+    dynamic_cast<TextElement*>(e.get())->setText("FPS: " + std::to_string(fps));
+    dynamic_cast<TextElement*>(e.get())->color = glm::vec3(std::max(1.0f - ((float)fps / 255.0f), 0.0f), 0.0f, 0.0f);
 }
 
 int main() {
@@ -486,6 +507,9 @@ int main() {
         int dx = event->deltax;
         int dy = event->deltay;
 
+        Main::mouseX = x;
+        Main::mouseY = y;
+
         if (checkPointerLock())
             ourCamera->ProcessMouseMovement(dx, -dy);
     });
@@ -503,14 +527,16 @@ int main() {
     Main::textureManager = new TextureManager();
     Main::textureManager->startInit(64, 64, 64);
 
-    // blocks
-    Main::textureManager->addTexture("/assets/textures/stone.png", 1);
-    Main::textureManager->addTexture("/assets/textures/dirt.png", 2);
-    Main::textureManager->addTexture("/assets/textures/grass.png", 3);
-    Main::textureManager->addTexture("/assets/textures/wood.png", 4);
+    loadAssets();
 
-    //entities
-    Main::textureManager->addTexture("/assets/textures/player.png", 49);
+    // // blocks
+    // Main::textureManager->addTexture("/assets/textures/stone.png", 1);
+    // Main::textureManager->addTexture("/assets/textures/dirt.png", 2);
+    // Main::textureManager->addTexture("/assets/textures/grass.png", 3);
+    // Main::textureManager->addTexture("/assets/textures/wood.png", 4);
+    //
+    // //entities
+    // Main::textureManager->addTexture("/assets/textures/player.png", 49);
 
     Main::textureManager->endInit();
 
@@ -526,34 +552,89 @@ int main() {
         }
     });
 
-    Main::menuManager = new GUIManager();
     Main::gameUIManager = new GUIManager();
     Main::gameUIManager->active = false;
-    std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int){}, 0, 20, Main::fontManager);
-    fpscounter->setText("FPS: 0", glm::vec3(0.0f, 0.0f, 0.0f));
+    std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int, int, int){}, 0, 20, Main::fontManager, false);
+    fpscounter->color = glm::vec3(0.0f, 0.0f, 0.0f);
+    fpscounter->setText("FPS: 0");
     Main::gameUIManager->addElement(fpscounter);
-    std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int){}, 0, 0, Main::fontManager);
-    crosshair->setText("+", glm::vec3(1.0f, 1.0f, 1.0f));
+    std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int, int, int){}, 0, 0, Main::fontManager, false);
+    crosshair->color = glm::vec3(1.0f, 1.0f, 1.0f);
+    crosshair->setText("+");
     Main::gameUIManager->addElement(crosshair);
-    std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int){}, 0, 40, Main::fontManager);
-    coords->setText("x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0", glm::vec3(0.0f, 0.0f, 0.0f));
+    std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int, int, int){}, 0, 40, Main::fontManager, false);
+    coords->color = glm::vec3(0.0f, 0.0f, 0.0f);
+    coords->setText("x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0");
     Main::gameUIManager->addElement(coords);
-    std::shared_ptr<EnterElement> ipenter = std::make_shared<EnterElement>("ipenter", [](int){}, 100, 200, Main::fontManager, 64, "localhost");
+
+    Main::menuManager = new GUIManager();
+    std::shared_ptr<TextElement> gamelabel = std::make_shared<TextElement>("gamelabel", [](int, int, int){}, (windowWidth/2)-30, 40, Main::fontManager, false);
+    gamelabel->color = glm::vec3(0.25f, 0.75f, 0.25f);
+    gamelabel->setText("MineWeb");
+    Main::menuManager->addElement(gamelabel);
+    std::shared_ptr<TextElement> verlabel = std::make_shared<TextElement>("verlabel", [](int, int, int){}, (windowWidth/2)-60, 80, Main::fontManager, false);
+    verlabel->color = glm::vec3(0.5f, 0.5f, 0.5f);
+    verlabel->setText("Version: dev");
+    Main::menuManager->addElement(verlabel);
+    std::shared_ptr<TextElement> iplabel = std::make_shared<TextElement>("iplabel", [](int, int, int){}, 100, 160, Main::fontManager, false);
+    iplabel->color = glm::vec3(0.1f, 0.1f, 0.1f);
+    iplabel->setText("Server IP:");
+    Main::menuManager->addElement(iplabel);
+    std::shared_ptr<EnterElement> ipenter = std::make_shared<EnterElement>("ipenter", [&](int x, int y, int stateMask) {
+        if (stateMask != (LEFT_CLICK)) { return; }
+        if (x > (ipenter->x - 5) && x < (ipenter->x + 10 * ipenter->maxlen) && y > (ipenter->y - 25) && y < (ipenter->y + 5)) {
+            ipenter->enteractive = true;
+        }
+        else {
+            ipenter->enteractive = false;
+        }
+    }, 100, 200, Main::fontManager, 64, "wss://example.com", true);
     ipenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
-    ipenter->enteractive = true;
+    ipenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
     Main::menuManager->addElement(ipenter);
+    std::shared_ptr<TextElement> joinbutton = std::make_shared<TextElement>("joinbutton", [&](int x, int y, int stateMask) {
+        if (stateMask != (LEFT_CLICK)) { return; }
+        if (x > (joinbutton->x - 5) && x < (joinbutton->x - 5 + 10 * joinbutton->text.length()) && y > (joinbutton->y - 25) && y < (joinbutton->y + 5)) {
+            Main::serverAddress = ipenter->text;
+            SocketClient::connect();
+            ipenter->enteractive = false;
+            Main::menuManager->active = false;
+            Main::gameUIManager->active = true;
+        }
+    }, 100, 240, Main::fontManager, true);
+    joinbutton->color = glm::vec3(1.0f, 1.0f, 1.0f);
+    joinbutton->bcolor = glm::vec3(1.0f, 0.5f, 0.5f);
+    joinbutton->setText("Join Server");
+    Main::menuManager->addElement(joinbutton);
+    std::shared_ptr<TextElement> localbutton = std::make_shared<TextElement>("localbutton", [&](int x, int y, int stateMask) {
+        if (stateMask != (LEFT_CLICK)) { return; }
+        if (x > (localbutton->x - 5) && x < (localbutton->x - 5 + 10 * localbutton->text.length()) && y > (localbutton->y - 25) && y < (localbutton->y + 5)) {
+            Main::serverAddress = "localhost";
+            SocketClient::connect();
+            ipenter->enteractive = false;
+            Main::menuManager->active = false;
+            Main::gameUIManager->active = true;
+        }
+    }, 100, 320, Main::fontManager, true);
+    localbutton->color = glm::vec3(1.0f, 1.0f, 1.0f);
+    localbutton->bcolor = glm::vec3(0.5f, 1.0f, 0.5f);
+    localbutton->setText("Play Offline");
+    Main::menuManager->addElement(localbutton);
+    std::shared_ptr<TextElement> importbutton = std::make_shared<TextElement>("importbutton", [&](int x, int y, int stateMask) {
+        if (stateMask != (LEFT_CLICK)) { loadLock = false; return; }
+        if (x > (importbutton->x - 5) && x < (importbutton->x - 5 + 10 * importbutton->text.length()) && y > (importbutton->y - 25) && y < (importbutton->y + 5) && !loadLock) {
+            emscripten_run_script("uploadSave()");
+            loadLock = true;
+        }
+    }, 100, 360, Main::fontManager, true);
+    importbutton->color = glm::vec3(1.0f, 1.0f, 1.0f);
+    importbutton->bcolor = glm::vec3(0.5f, 0.5f, 1.0f);
+    importbutton->setText("Load Saved World (Will Start Offline Mode)");
+    Main::menuManager->addElement(importbutton);
 
     L_SUBSCRIBE(KeyEvent, [](KeyEvent* event) {
         if (event->state && !Main::serverConnected) {
             std::shared_ptr<Element> e = Main::menuManager->getElement("ipenter");
-
-            if (event->key == "Enter") {
-                Main::serverAddress = dynamic_cast<EnterElement*>(e.get())->text;
-                SocketClient::connect();
-                dynamic_cast<EnterElement*>(e.get())->enteractive = false;
-                Main::menuManager->active = false;
-                Main::gameUIManager->active = true;
-            }
 
             if (event->key == "Backspace") {
                 dynamic_cast<EnterElement*>(e.get())->removeChar();

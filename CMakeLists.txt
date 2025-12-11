@@ -36,7 +36,7 @@ target_link_options(MineWebClient PRIVATE
         "SHELL:-s EXPORTED_FUNCTIONS=['_main','_load_world']"
         "SHELL:-s EXPORTED_RUNTIME_METHODS=['ccall']"
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/assets@/assets"
-        # "SHELL:-s NO_DISABLE_EXCEPTION_CATCHING"
+        "SHELL:-s NO_DISABLE_EXCEPTION_CATCHING"
 )
 
 target_include_directories(MineWebClient PRIVATE
