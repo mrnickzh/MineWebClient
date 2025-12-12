@@ -2,26 +2,38 @@
 
 #include <fstream>
 #include <iostream>
+#include <algorithm>
+#include <map>
 
 #define STB_TRUETYPE_IMPLEMENTATION
-#include <algorithm>
 
 #include "../../lib/stb/stb_truetype.h"
 
-struct
+struct FontData
 {
-    const uint32_t size = 20;
-    const uint32_t atlasWidth = 1024;
-    const uint32_t atlasHeight = 1024;
-    const uint32_t oversampleX = 1;
-    const uint32_t oversampleY = 1;
+    uint32_t size = 20;
+    const uint32_t atlasWidth = 2048;
+    const uint32_t atlasHeight = 2048;
+    const uint32_t oversampleX = 2;
+    const uint32_t oversampleY = 2;
     const uint32_t firstChar = ' ';
     const uint32_t charCount = '~' - ' ';
     std::unique_ptr<stbtt_packedchar[]> charInfo;
-    GLuint texture = 0;
-} font;
+};
 
-void FontManager::init(const std::string& path) {
+std::map<int, std::shared_ptr<FontData>> fonts;
+
+int FontManager::offsetFromSize(int size) {
+    int offset = 0;
+    for (auto& font : fonts) {
+        if (font.first == size) {
+            return offset;
+        }
+        offset++;
+    }
+}
+
+void FontManager::init(const std::string& path, std::vector<int>& sizes) {
     std::ifstream file(path, std::ios::binary);
     std::vector<uint8_t> fontData;
 
@@ -29,38 +41,59 @@ void FontManager::init(const std::string& path) {
         fontData = std::vector<uint8_t>((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     }
 
-    uint8_t atlasData[font.atlasWidth * font.atlasHeight];
-
-    font.charInfo = std::make_unique<stbtt_packedchar[]>(font.charCount);
-
-    stbtt_pack_context context;
-    if (!stbtt_PackBegin(&context, &atlasData[0], (int)font.atlasWidth, (int)font.atlasHeight, 0, 1, nullptr))
-        std::cout << "Failed to initialize font" << std::endl;
-
-    stbtt_PackSetOversampling(&context, font.oversampleX, font.oversampleY);
-    if (!stbtt_PackFontRange(&context, fontData.data(), 0, (float)font.size, (int)font.firstChar, (int)font.charCount, font.charInfo.get()))
-        std::cout << "Failed to pack font" << std::endl;
-
-    stbtt_PackEnd(&context);
-
-    glGenTextures(1, &font.texture);
+    fontArray = 0;
+    glGenTextures(1, &fontArray);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, font.texture);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, (int)font.atlasWidth, (int)font.atlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE, &atlasData[0]);
-    glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, fontArray);
+
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY,
+        1,                    //5 mipmaps
+        GL_R8,               //Internal format
+        2048, 2048, (int)sizes.size()           //width,height
+    );
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    for (int i = 0; i < sizes.size(); i++) {
+        std::shared_ptr<FontData> font = std::make_shared<FontData>();
+        font->size = sizes[i];
+        fonts.insert(std::make_pair(sizes[i], font));
+
+        uint8_t atlasData[fonts[sizes[i]]->atlasWidth * fonts[sizes[i]]->atlasHeight];
+
+        fonts[sizes[i]]->charInfo = std::make_unique<stbtt_packedchar[]>(fonts[sizes[i]]->charCount);
+
+        stbtt_pack_context context;
+        if (!stbtt_PackBegin(&context, &atlasData[0], (int)fonts[sizes[i]]->atlasWidth, (int)fonts[sizes[i]]->atlasHeight, 0, 1, nullptr))
+            std::cout << "Failed to initialize font" << std::endl;
+
+        stbtt_PackSetOversampling(&context, fonts[sizes[i]]->oversampleX, fonts[sizes[i]]->oversampleY);
+        if (!stbtt_PackFontRange(&context, fontData.data(), 0, (float)fonts[sizes[i]]->size, (int)fonts[sizes[i]]->firstChar, (int)fonts[sizes[i]]->charCount, fonts[sizes[i]]->charInfo.get()))
+            std::cout << "Failed to pack font" << std::endl;
+
+        stbtt_PackEnd(&context);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, fontArray);
+
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                0,                      //Mipmap number
+                0, 0, i, //xoffset, yoffset, zoffset
+                (int)fonts[sizes[i]]->atlasWidth, (int)fonts[sizes[i]]->atlasHeight, 1,          //width, height, depth
+                GL_RED,                 //format
+                GL_UNSIGNED_BYTE,       //type
+                &atlasData[0]); //pointer to data
+    }
 }
 
-GlyphInfo FontManager::getGlyphInfo(uint32_t character, float offsetX, float offsetY)
+GlyphInfo FontManager::getGlyphInfo(int size, uint32_t character, float offsetX, float offsetY)
 {
     stbtt_aligned_quad quad;
 
-    stbtt_GetPackedQuad(font.charInfo.get(), (int)font.atlasWidth, (int)font.atlasHeight, (int)(character - font.firstChar), &offsetX, &offsetY, &quad, 1);
+    stbtt_GetPackedQuad(fonts[size]->charInfo.get(), (int)fonts[size]->atlasWidth, (int)fonts[size]->atlasHeight, (int)(character - fonts[size]->firstChar), &offsetX, &offsetY, &quad, 1);
     auto xmin = quad.x0;
     auto xmax = quad.x1;
     auto ymin = quad.y0;
@@ -86,7 +119,7 @@ GlyphInfo FontManager::getGlyphInfo(uint32_t character, float offsetX, float off
     return info;
 }
 
-int FontManager::genGlyphs(const std::string& text, int x, int y, GLuint& vao, GLuint& vbo, GLuint& uv) {
+int FontManager::genGlyphs(const std::string& text, int x, int y, int size, GLuint& vao, GLuint& vbo, GLuint& uv) {
     std::vector<glm::vec2> vertices;
     std::vector<glm::vec2> uvs;
 
@@ -94,7 +127,7 @@ int FontManager::genGlyphs(const std::string& text, int x, int y, GLuint& vao, G
     float offsetX = (float)x, offsetY = (float)y;
     for (auto c : text)
     {
-        auto glyphInfo = getGlyphInfo(c, offsetX, offsetY);
+        auto glyphInfo = getGlyphInfo(size, c, offsetX, offsetY);
         offsetX = glyphInfo.offsetX;
         offsetY = glyphInfo.offsetY;
 
@@ -134,7 +167,7 @@ int FontManager::genGlyphs(const std::string& text, int x, int y, GLuint& vao, G
 
 void FontManager::render(GLuint& vao, GLuint& vbo, GLuint& uv, int count) {
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, font.texture);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, fontArray);
 
     glBindVertexArray(vao);
 

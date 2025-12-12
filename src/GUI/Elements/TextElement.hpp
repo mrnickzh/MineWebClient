@@ -17,7 +17,7 @@ public:
     glm::vec3 bcolor = glm::vec3(0.0f, 0.0f, 0.0f);
     bool background = false;
 
-    TextElement(std::string id, std::function<void(int, int, int)> callback, int x, int y, FontManager* fm, bool bg);
+    TextElement(std::string id, std::function<void(int, int, int)> callback, int x, int y, int fontsize, FontManager* fm, bool bg);
 
     void render() override;
     void setText(const std::string& t);

@@ -9,7 +9,7 @@ class EventBus {
 private:
     static EventBus* instance;
     std::unordered_map<std::type_index, std::vector<std::function<void(void*)>>> handlers;
-    std::mutex handlersMutex = std::mutex();
+    std::recursive_mutex handlersMutex = std::recursive_mutex();
 
     EventBus() = default;
 
@@ -25,7 +25,7 @@ public:
 
     template<typename EventType>
     void publish(EventType* event) {
-        std::lock_guard<std::mutex> guard(handlersMutex);
+        std::lock_guard<std::recursive_mutex> guard(handlersMutex);
         auto it = handlers.find(typeid(EventType));
         if (it != handlers.end()) {
             for (auto& handler : it->second) {

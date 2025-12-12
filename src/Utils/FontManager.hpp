@@ -16,10 +16,13 @@ struct GlyphInfo
 
 class FontManager {
 public:
-    void init(const std::string& path);
+    GLuint fontArray = 0;
+
+    int offsetFromSize(int size);
+    void init(const std::string& path, std::vector<int>& sizes);
     void render(GLuint& vao, GLuint& vbo, GLuint& uv, int count);
-    GlyphInfo getGlyphInfo(uint32_t character, float offsetX, float offsetY);
-    int genGlyphs(const std::string& text, int x, int y, GLuint& vao, GLuint& vbo, GLuint& uv);
+    GlyphInfo getGlyphInfo(int size, uint32_t character, float offsetX, float offsetY);
+    int genGlyphs(const std::string& text, int x, int y, int size, GLuint& vao, GLuint& vbo, GLuint& uv);
     void genBackground(int x, int y, int w, int h, GLuint& vao, GLuint& vbo, GLuint& uv);
     void renderBackground(GLuint& vao, GLuint& vbo, GLuint& uv);
 };

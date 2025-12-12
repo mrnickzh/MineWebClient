@@ -1,18 +1,19 @@
 #version 300 es
 precision mediump float;
-precision lowp sampler2D;
+precision lowp sampler2DArray;
 
-in vec2 uv0;
-
-uniform sampler2D textureSampler;
+uniform sampler2DArray textureSampler;
 uniform vec3 color;
 uniform int background;
+uniform float texindex;
+
+in vec2 uv0;
 
 out vec4 fragColor;
 
 void main()
 {
-    float alpha = texture(textureSampler, uv0).r;
+    float alpha = texture(textureSampler, vec3(uv0.xy, texindex)).r;
     if (background == 1) {
         alpha = 1.0f;
     }

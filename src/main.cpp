@@ -185,7 +185,7 @@ EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     glfwSetWindowSize(window, windowWidth, windowHeight);
 
     std::shared_ptr<Element> gl = Main::menuManager->getElement("gamelabel");
-    dynamic_cast<TextElement*>(gl.get())->setPosition((windowWidth/2)-30, dynamic_cast<TextElement*>(gl.get())->y);
+    dynamic_cast<TextElement*>(gl.get())->setPosition((windowWidth/2)-80, dynamic_cast<TextElement*>(gl.get())->y);
     std::shared_ptr<Element> vl = Main::menuManager->getElement("verlabel");
     dynamic_cast<TextElement*>(vl.get())->setPosition((windowWidth/2)-60, dynamic_cast<TextElement*>(vl.get())->y);
 
@@ -515,10 +515,11 @@ int main() {
     });
 
     Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}});
-    Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}, {"background", 0}});
+    Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}, {"background", 0}, {"texindex", 0}});
 
+    std::vector<int> fontsizes = {20, 40};
     Main::fontManager = new FontManager();
-    Main::fontManager->init("/assets/fonts/montserrat.ttf");
+    Main::fontManager->init("/assets/fonts/montserrat.ttf", fontsizes);
 
     Main::vertexManager = new VertexManager();
     Main::vertexManager->initVBO(0, vertices, sizeof(vertices));
@@ -554,29 +555,29 @@ int main() {
 
     Main::gameUIManager = new GUIManager();
     Main::gameUIManager->active = false;
-    std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int, int, int){}, 0, 20, Main::fontManager, false);
+    std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int, int, int){}, 0, 20, 20, Main::fontManager, false);
     fpscounter->color = glm::vec3(0.0f, 0.0f, 0.0f);
     fpscounter->setText("FPS: 0");
     Main::gameUIManager->addElement(fpscounter);
-    std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int, int, int){}, 0, 0, Main::fontManager, false);
+    std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int, int, int){}, 0, 0, 20, Main::fontManager, false);
     crosshair->color = glm::vec3(1.0f, 1.0f, 1.0f);
     crosshair->setText("+");
     Main::gameUIManager->addElement(crosshair);
-    std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int, int, int){}, 0, 40, Main::fontManager, false);
+    std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int, int, int){}, 0, 40, 20, Main::fontManager, false);
     coords->color = glm::vec3(0.0f, 0.0f, 0.0f);
     coords->setText("x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0");
     Main::gameUIManager->addElement(coords);
 
     Main::menuManager = new GUIManager();
-    std::shared_ptr<TextElement> gamelabel = std::make_shared<TextElement>("gamelabel", [](int, int, int){}, (windowWidth/2)-30, 40, Main::fontManager, false);
+    std::shared_ptr<TextElement> gamelabel = std::make_shared<TextElement>("gamelabel", [](int, int, int){}, (windowWidth/2)-80, 40, 40, Main::fontManager, false);
     gamelabel->color = glm::vec3(0.25f, 0.75f, 0.25f);
     gamelabel->setText("MineWeb");
     Main::menuManager->addElement(gamelabel);
-    std::shared_ptr<TextElement> verlabel = std::make_shared<TextElement>("verlabel", [](int, int, int){}, (windowWidth/2)-60, 80, Main::fontManager, false);
+    std::shared_ptr<TextElement> verlabel = std::make_shared<TextElement>("verlabel", [](int, int, int){}, (windowWidth/2)-60, 80, 20, Main::fontManager, false);
     verlabel->color = glm::vec3(0.5f, 0.5f, 0.5f);
     verlabel->setText("Version: dev");
     Main::menuManager->addElement(verlabel);
-    std::shared_ptr<TextElement> iplabel = std::make_shared<TextElement>("iplabel", [](int, int, int){}, 100, 160, Main::fontManager, false);
+    std::shared_ptr<TextElement> iplabel = std::make_shared<TextElement>("iplabel", [](int, int, int){}, 100, 160, 20, Main::fontManager, false);
     iplabel->color = glm::vec3(0.1f, 0.1f, 0.1f);
     iplabel->setText("Server IP:");
     Main::menuManager->addElement(iplabel);
@@ -588,7 +589,7 @@ int main() {
         else {
             ipenter->enteractive = false;
         }
-    }, 100, 200, Main::fontManager, 64, "wss://example.com", true);
+    }, 100, 200, 20, Main::fontManager, 64, "wss://example.com", true);
     ipenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
     ipenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
     Main::menuManager->addElement(ipenter);
@@ -601,7 +602,7 @@ int main() {
             Main::menuManager->active = false;
             Main::gameUIManager->active = true;
         }
-    }, 100, 240, Main::fontManager, true);
+    }, 100, 240, 20, Main::fontManager, true);
     joinbutton->color = glm::vec3(1.0f, 1.0f, 1.0f);
     joinbutton->bcolor = glm::vec3(1.0f, 0.5f, 0.5f);
     joinbutton->setText("Join Server");
@@ -615,7 +616,7 @@ int main() {
             Main::menuManager->active = false;
             Main::gameUIManager->active = true;
         }
-    }, 100, 320, Main::fontManager, true);
+    }, 100, 320, 20, Main::fontManager, true);
     localbutton->color = glm::vec3(1.0f, 1.0f, 1.0f);
     localbutton->bcolor = glm::vec3(0.5f, 1.0f, 0.5f);
     localbutton->setText("Play Offline");
@@ -626,7 +627,7 @@ int main() {
             emscripten_run_script("uploadSave()");
             loadLock = true;
         }
-    }, 100, 360, Main::fontManager, true);
+    }, 100, 360, 20, Main::fontManager, true);
     importbutton->color = glm::vec3(1.0f, 1.0f, 1.0f);
     importbutton->bcolor = glm::vec3(0.5f, 0.5f, 1.0f);
     importbutton->setText("Load Saved World (Will Start Offline Mode)");
