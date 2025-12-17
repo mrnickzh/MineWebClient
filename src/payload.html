@@ -265,7 +265,7 @@
         let result=reader.result;
         const uint8_view = new Uint8Array(result);
 
-        FS.writeFile('world.mmw', uint8_view);
+        FS.writeFile('world.mww', uint8_view);
         Module.ccall('load_world', 'number');
         document.getElementById('myfile').disabled = true;
     }
