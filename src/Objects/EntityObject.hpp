@@ -13,6 +13,7 @@ public:
     GLuint VAO = 0;
     GLuint TBO = 0;
     GLuint IVBO = 0;
+    GLuint LBO = 0;
     float ftexture;
 
     EntityObject(glm::vec3 position, glm::vec3 rotation, int vboid, int tid, bool cancollide, glm::vec3 collider);
@@ -20,4 +21,5 @@ public:
     void render() override;
     void setposition(glm::vec3 position) override;
     void setrotation(glm::vec3 rotation) override;
+    void setlight(int level, int side) override;
 };

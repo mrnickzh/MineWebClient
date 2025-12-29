@@ -9,6 +9,7 @@
 #include "../../../lib/glm/glm.hpp"
 #include "../../../lib/glm/gtc/matrix_transform.hpp"
 #include "../../../lib/glm/gtc/type_ptr.hpp"
+#include "../../Objects/LightObject.hpp"
 
 
 class EditChunk : public Packet {
@@ -58,6 +59,11 @@ public:
             }
             case 4: {
                 std::shared_ptr<BlockObject> block = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 4, true, glm::vec3(0.5f, 0.5f, 0.5f));
+                Main::chunks[chunkpos]->addBlock(blockpos, block);
+                break;
+            }
+            case 5: {
+                std::shared_ptr<LightObject> block = std::make_shared<LightObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 5, true, glm::vec3(0.5f, 0.5f, 0.5f), 10);
                 Main::chunks[chunkpos]->addBlock(blockpos, block);
                 break;
             }

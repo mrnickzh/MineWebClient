@@ -52,6 +52,11 @@ class GenerateChunk : public Packet {
                             chunkMap->addBlock(glm::vec3(blockpos.x, blockpos.y, blockpos.z), blockObject);
                             break;
                         }
+                        case 5: {
+                            std::shared_ptr<LightObject> blockObject = std::make_shared<LightObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 5, true, glm::vec3(0.5f, 0.5f, 0.5f), 10);
+                            chunkMap->addBlock(glm::vec3(blockpos.x, blockpos.y, blockpos.z), blockObject);
+                            break;
+                        }
                     }
                 }
             }

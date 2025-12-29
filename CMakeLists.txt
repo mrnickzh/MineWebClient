@@ -12,7 +12,7 @@ file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "src/*.hpp")
 file(GLOB_RECURSE LIB_FILES "lib/*.cpp" "lib/*.hpp" "lib/*.h")
 add_executable(MineWebClient ${SOURCE_FILES} ${LIB_FILES})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pthread -fsanitize=undefined")
 
 target_link_options(MineWebClient PRIVATE
         "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/src/payload.html"

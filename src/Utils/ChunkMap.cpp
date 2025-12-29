@@ -2,12 +2,14 @@
 
 #include "../main.hpp"
 #include "../Objects/AirObject.hpp"
+#include "../Objects/LightObject.hpp"
 
 ChunkMap::ChunkMap() {
     glGenVertexArrays(1, &VAO);
 
     memset(translations, 0, sizeof(translations));
     memset(textures, 0, sizeof(textures));
+    memset(lightLevels, 0, sizeof(lightLevels));
     instanceCount = 0;
     for (auto& b : blocks) {
         if (typeid((*b.second)) != typeid(AirObject)) {
@@ -31,6 +33,11 @@ ChunkMap::ChunkMap() {
             if (exposed) {
                 translations[instanceCount] = b.second->model;
                 textures[instanceCount] = (float)b.second->texture;
+
+                for (int i = 0; i < 6; i++) {
+                    lightLevels[6 * instanceCount + i] = b.second->lightLevels[i];
+                }
+
                 instanceCount++;
             }
         }
@@ -44,6 +51,11 @@ ChunkMap::ChunkMap() {
     glGenBuffers(1, &TBO);
     glBindBuffer(GL_ARRAY_BUFFER, TBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 512, &textures[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glGenBuffers(1, &LBO);
+    glBindBuffer(GL_ARRAY_BUFFER, LBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * (512 * 6), &lightLevels[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -59,6 +71,7 @@ std::shared_ptr<Object> ChunkMap::getBlock(glm::vec3 blockPos) {
 void ChunkMap::initTranslations() {
     memset(translations, 0, sizeof(translations));
     memset(textures, 0, sizeof(textures));
+    memset(lightLevels, 0, sizeof(lightLevels));
     instanceCount = 0;
     for (auto& b : blocks) {
         if (typeid((*b.second)) != typeid(AirObject)) {
@@ -82,6 +95,11 @@ void ChunkMap::initTranslations() {
             if (exposed) {
                 translations[instanceCount] = b.second->model;
                 textures[instanceCount] = (float)b.second->texture;
+
+                for (int i = 0; i < 6; i++) {
+                    lightLevels[6 * instanceCount + i] = b.second->lightLevels[i];
+                }
+
                 instanceCount++;
             }
         }
@@ -97,6 +115,12 @@ void ChunkMap::initTranslations() {
     glGenBuffers(1, &TBO);
     glBindBuffer(GL_ARRAY_BUFFER, TBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 512, &textures[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glDeleteBuffers(1, &LBO);
+    glGenBuffers(1, &LBO);
+    glBindBuffer(GL_ARRAY_BUFFER, LBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * (512 * 6), &lightLevels[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -131,6 +155,27 @@ void ChunkMap::renderChunk() {
     glVertexAttribDivisor(6, 1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+    glBindBuffer(GL_ARRAY_BUFFER, LBO);
+    glEnableVertexAttribArray(7);
+    glEnableVertexAttribArray(8);
+    glEnableVertexAttribArray(9);
+    glEnableVertexAttribArray(10);
+    glEnableVertexAttribArray(11);
+    glEnableVertexAttribArray(12);
+    glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(0));
+    glVertexAttribPointer(8, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(1 * sizeof(float)));
+    glVertexAttribPointer(9, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(2 * sizeof(float)));
+    glVertexAttribPointer(10, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(11, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(4 * sizeof(float)));
+    glVertexAttribPointer(12, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
+    glVertexAttribDivisor(7, 1);
+    glVertexAttribDivisor(8, 1);
+    glVertexAttribDivisor(9, 1);
+    glVertexAttribDivisor(10, 1);
+    glVertexAttribDivisor(11, 1);
+    glVertexAttribDivisor(12, 1);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     // for (int i = 0; i < instanceCount; i++) {
     //     // if (translations[i].x == 0.0f && translations[i].y == 0.0f && translations[i].z == 0.0f) {
     //         std::cout << translations[i].x << " " << translations[i].y << " " << translations[i].z << " " << translations[i].w << " " << i << std::endl;
@@ -162,3 +207,4 @@ bool ChunkMap::checkCull(Frustum& frustum, glm::vec3 chunkpos) {
 
     return true;
 }
+

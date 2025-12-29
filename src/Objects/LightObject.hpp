@@ -8,10 +8,11 @@
 #include "../../lib/glm/gtc/matrix_transform.hpp"
 #include "../../lib/glm/gtc/type_ptr.hpp"
 
-class BlockObject : public Object {
+class LightObject : public Object {
 public:
+    int lightIntensity;
 
-    BlockObject(glm::vec3 position, glm::vec3 rotation, int vboid, int tid, bool cancollide, glm::vec3 collider);
+    LightObject(glm::vec3 position, glm::vec3 rotation, int vboid, int tid, bool cancollide, glm::vec3 collider, int light);
 
     void render() override;
     void setposition(glm::vec3 position) override;

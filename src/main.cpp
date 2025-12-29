@@ -34,6 +34,7 @@
 #include "Protocol/Packets/PlayerAuthInput.hpp"
 #include "Utils/VertexManager.hpp"
 #include "../lib/json/json.hpp"
+#include "Protocol/Packets/LightMap.hpp"
 
 float vertices[] = {
     // Back face
@@ -146,9 +147,17 @@ bool placeLock = false;
 bool breakLock = false;
 bool saveLock = false;
 bool loadLock = false;
+bool raiseLock = false;
+bool lowerLock = false;
 
 int renderDistance = 3;
 Frustum cameraFrustum;
+
+float ambientLevel = 0.1f;
+
+glm::vec3 colorLerp(glm::vec3 endcolor, glm::vec3 startcolor, float step) {
+    return (endcolor - startcolor) * step + startcolor;
+}
 
 bool checkPointerLock() {
     EmscriptenPointerlockChangeEvent lastChangeEvent;
@@ -243,6 +252,22 @@ void processInput()
             freeCamLock = false;
         }
 
+        if (InputHandler::isKeyPressed("KeyY") && !raiseLock) {
+            ambientLevel = std::min(ambientLevel + 0.05f, 1.0f);
+            raiseLock = true;
+        }
+        if (InputHandler::isKeyReleased("KeyY") && raiseLock) {
+            raiseLock = false;
+        }
+
+        if (InputHandler::isKeyPressed("KeyH") && !lowerLock) {
+            ambientLevel = std::max(ambientLevel - 0.05f, 0.0f);
+            lowerLock = true;
+        }
+        if (InputHandler::isKeyReleased("KeyH") && lowerLock) {
+            lowerLock = false;
+        }
+
         if (InputHandler::isMousePressed(MOUSE_LEFT) && checkPointerLock() && !breakLock) {
             glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
             glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
@@ -271,7 +296,7 @@ void processInput()
             RaycastResult obj = Main::physicsEngine->raycast(4.0f, p, r);
             if (obj.hit) {
                 if (!Main::physicsEngine->possibleCollision(obj.prevobject->position, glm::vec3(0.5f, 0.5f, 0.5f), Main::localPlayer->object)) {
-                    std::shared_ptr<BlockObject> wood = std::make_shared<BlockObject>(obj.prevobject->position, obj.prevobject->rotation, 0, 4, true, glm::vec3(0.5f, 0.5f, 0.5f));
+                    std::shared_ptr<LightObject> wood = std::make_shared<LightObject>(obj.prevobject->position, obj.prevobject->rotation, 0, 5, true, glm::vec3(0.5f, 0.5f, 0.5f), 10);
                     // std::cout << obj.prevchunkpos.x << " " << obj.prevchunkpos.y << " " << obj.prevchunkpos.z << std::endl;
                     // std::cout << obj.prevblockpos.x << " " << obj.prevblockpos.y << " " << obj.prevblockpos.z << std::endl;
                     // Main::chunks[obj.prevchunkpos]->addBlock(obj.prevblockpos, wood);
@@ -279,7 +304,7 @@ void processInput()
                     EditChunk packet;
                     packet.chunkpos = obj.prevchunkpos;
                     packet.blockpos = obj.prevblockpos;
-                    packet.id = 4;
+                    packet.id = 5;
                     SocketClient::sendPacket(&packet);
                 }
                 else { std::cout << "blocked" << std::endl; }
@@ -304,7 +329,10 @@ void processInput()
 }
 
 void preRender() {
-    glClearColor(0.53f, 0.81f, 0.98f, 1.0f);
+    // 0.005f, 0.05f, 0.12f night
+    // 0.53f, 0.81f, 0.98f day
+    glm::vec3 ambientColor = colorLerp(glm::vec3(0.53f, 0.81f, 0.98f), glm::vec3(0.005f, 0.05f, 0.12f), ambientLevel);
+    glClearColor(ambientColor.r, ambientColor.g, ambientColor.b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -317,6 +345,7 @@ void preRender() {
 
     glUniformMatrix4fv(Main::ourShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
     glUniformMatrix4fv(Main::ourShader->uniforms["view"], 1, GL_FALSE, &ourCamera->GetViewMatrix()[0][0]);
+    glUniform1f(Main::ourShader->uniforms["ambientLevel"], ambientLevel);
     glUniform1i(Main::ourShader->uniforms["textureSampler"], 0);
 }
 
@@ -498,6 +527,7 @@ int main() {
     PacketHelper::registerPacket(2, []() { return new GenerateChunk(); });
     PacketHelper::registerPacket(3, []() { return new EntityAction(); });
     PacketHelper::registerPacket(4, []() { return new PlayerAuthInput(); });
+    PacketHelper::registerPacket(5, []() { return new LightMap(); });
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
@@ -514,7 +544,7 @@ int main() {
             ourCamera->ProcessMouseMovement(dx, -dy);
     });
 
-    Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}});
+    Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}, {"ambientLevel", 0}});
     Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}, {"background", 0}, {"texindex", 0}});
 
     std::vector<int> fontsizes = {20, 40};

@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <deque>
 #include <GLES3/gl3.h>
 
 #include "../Objects/Object.hpp"
@@ -11,11 +12,13 @@ public:
     std::map<glm::vec3, std::shared_ptr<Object>, vec3Comparator> blocks;
     glm::mat4 translations[512];
     float textures[512];
+    float lightLevels[512*6];
     int instanceCount;
 
     GLuint VAO = 0;
     GLuint IVBO = 0;
     GLuint TBO = 0;
+    GLuint LBO = 0;
 
     ChunkMap();
 

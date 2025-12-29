@@ -1,0 +1,45 @@
+#pragma once
+
+#include "../Packet.hpp"
+#include "../../main.hpp"
+#include "../../Objects/AirObject.hpp"
+#include "../../Objects/BlockObject.hpp"
+
+class LightMap : public Packet {
+    public:
+        glm::vec3 chunkpos;
+
+    void receive(ByteBuf &buffer) override {
+        chunkpos = glm::vec3(buffer.readFloat(), buffer.readFloat(), buffer.readFloat());
+        printf("%f %f %f chunkpos\n", chunkpos.x, chunkpos.y, chunkpos.z);
+        if (!Main::chunks.count(chunkpos)) {
+            return;
+        }
+        std::shared_ptr<ChunkMap> chunkMap = Main::chunks[chunkpos];
+        int ch = 0;
+
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                for (int z = 0; z < 8; z++) {
+                    glm::vec3 blockpos = glm::vec3(buffer.readFloat(), buffer.readFloat(), buffer.readFloat());
+                    int lights[6] = {buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt()};
+                    ch += 1;
+                    chunkMap->getBlock(blockpos)->setlight(lights[0], 0);
+                    chunkMap->getBlock(blockpos)->setlight(lights[1], 1);
+                    chunkMap->getBlock(blockpos)->setlight(lights[2], 2);
+                    chunkMap->getBlock(blockpos)->setlight(lights[3], 3);
+                    chunkMap->getBlock(blockpos)->setlight(lights[4], 4);
+                    chunkMap->getBlock(blockpos)->setlight(lights[5], 5);
+                    if (lights[0] != 0 || lights[1] != 0 || lights[2] != 0 || lights[3] != 0 || lights[4] != 0 || lights[5] != 0) { printf("%f %f %f block %d %d %d %d %d %d light\n", blockpos.x, blockpos.y, blockpos.z, lights[0], lights[1], lights[2], lights[3], lights[4], lights[5]); }
+                }
+            }
+        }
+
+        if (ch > 512) {
+            // std::cout << chunkpos.x << " " << chunkpos.y << " " << chunkpos.z << std::endl;
+        }
+
+        chunkMap->initTranslations();
+    }
+    void send(ByteBuf &buffer) override {}
+};
