@@ -135,6 +135,7 @@ int windowHeight = 600;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+float lastCounter = 0.0f;
 
 float maxH = 0.05f;
 
@@ -150,10 +151,10 @@ bool loadLock = false;
 bool raiseLock = false;
 bool lowerLock = false;
 
-int renderDistance = 3;
+int renderDistance = 1;
 Frustum cameraFrustum;
 
-float ambientLevel = 0.1f;
+float ambientLevel = 0.2f;
 
 glm::vec3 colorLerp(glm::vec3 endcolor, glm::vec3 startcolor, float step) {
     return (endcolor - startcolor) * step + startcolor;
@@ -253,7 +254,7 @@ void processInput()
         }
 
         if (InputHandler::isKeyPressed("KeyY") && !raiseLock) {
-            ambientLevel = std::min(ambientLevel + 0.05f, 1.0f);
+            ambientLevel = std::min(ambientLevel + 0.2f, 1.0f);
             raiseLock = true;
         }
         if (InputHandler::isKeyReleased("KeyY") && raiseLock) {
@@ -261,7 +262,7 @@ void processInput()
         }
 
         if (InputHandler::isKeyPressed("KeyH") && !lowerLock) {
-            ambientLevel = std::max(ambientLevel - 0.05f, 0.0f);
+            ambientLevel = std::max(ambientLevel - 0.2f, 0.0f);
             lowerLock = true;
         }
         if (InputHandler::isKeyReleased("KeyH") && lowerLock) {
@@ -493,10 +494,13 @@ void mainLoop() {
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
 
-    int fps = (int)std::round(1.0f / deltaTime);
-    std::shared_ptr<Element> e = Main::gameUIManager->getElement("fpscounter");
-    dynamic_cast<TextElement*>(e.get())->setText("FPS: " + std::to_string(fps));
-    dynamic_cast<TextElement*>(e.get())->color = glm::vec3(std::max(1.0f - ((float)fps / 255.0f), 0.0f), 0.0f, 0.0f);
+    if ((float)glfwGetTime() > lastCounter + 1.0f) {
+        int fps = (int)std::round(1.0f / deltaTime);
+        std::shared_ptr<Element> e = Main::gameUIManager->getElement("fpscounter");
+        dynamic_cast<TextElement*>(e.get())->setText("FPS: " + std::to_string(fps));
+        dynamic_cast<TextElement*>(e.get())->color = glm::vec3(std::max(1.0f - ((float)fps / 255.0f), 0.0f), 0.0f, 0.0f);
+        lastCounter = (float)glfwGetTime();
+    }
 }
 
 int main() {

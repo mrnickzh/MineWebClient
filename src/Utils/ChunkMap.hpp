@@ -12,7 +12,7 @@ public:
     std::map<glm::vec3, std::shared_ptr<Object>, vec3Comparator> blocks;
     glm::mat4 translations[512];
     float textures[512];
-    float lightLevels[512*6];
+    glm::vec2 lightLevels[512*6];
     int instanceCount;
 
     GLuint VAO = 0;

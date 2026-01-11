@@ -8,15 +8,15 @@ layout (location = 4) in vec4 aTranslation2;
 layout (location = 5) in vec4 aTranslation3;
 layout (location = 6) in vec4 aTranslation4;
 
-layout (location = 7) in float aLightLevel1;
-layout (location = 8) in float aLightLevel2;
-layout (location = 9) in float aLightLevel3;
-layout (location = 10) in float aLightLevel4;
-layout (location = 11) in float aLightLevel5;
-layout (location = 12) in float aLightLevel6;
+layout (location = 7) in vec2 aLightLevel1;
+layout (location = 8) in vec2 aLightLevel2;
+layout (location = 9) in vec2 aLightLevel3;
+layout (location = 10) in vec2 aLightLevel4;
+layout (location = 11) in vec2 aLightLevel5;
+layout (location = 12) in vec2 aLightLevel6;
 
 out vec3 TexCoord;
-out float LightLevel;
+out vec2 LightLevel;
 
 uniform mat4 view;
 uniform mat4 projection;

@@ -35,7 +35,8 @@ ChunkMap::ChunkMap() {
                 textures[instanceCount] = (float)b.second->texture;
 
                 for (int i = 0; i < 6; i++) {
-                    lightLevels[6 * instanceCount + i] = b.second->lightLevels[i];
+                    lightLevels[6 * instanceCount + i].x = b.second->lightLevels[i].x;
+                    lightLevels[6 * instanceCount + i].y = b.second->lightLevels[i].y;
                 }
 
                 instanceCount++;
@@ -55,7 +56,7 @@ ChunkMap::ChunkMap() {
 
     glGenBuffers(1, &LBO);
     glBindBuffer(GL_ARRAY_BUFFER, LBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * (512 * 6), &lightLevels[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * (512 * 6), &lightLevels[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -97,7 +98,8 @@ void ChunkMap::initTranslations() {
                 textures[instanceCount] = (float)b.second->texture;
 
                 for (int i = 0; i < 6; i++) {
-                    lightLevels[6 * instanceCount + i] = b.second->lightLevels[i];
+                    lightLevels[6 * instanceCount + i].x = b.second->lightLevels[i].x;
+                    lightLevels[6 * instanceCount + i].y = b.second->lightLevels[i].y;
                 }
 
                 instanceCount++;
@@ -120,7 +122,7 @@ void ChunkMap::initTranslations() {
     glDeleteBuffers(1, &LBO);
     glGenBuffers(1, &LBO);
     glBindBuffer(GL_ARRAY_BUFFER, LBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * (512 * 6), &lightLevels[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * (512 * 6), &lightLevels[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -162,12 +164,12 @@ void ChunkMap::renderChunk() {
     glEnableVertexAttribArray(10);
     glEnableVertexAttribArray(11);
     glEnableVertexAttribArray(12);
-    glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(0));
-    glVertexAttribPointer(8, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(1 * sizeof(float)));
-    glVertexAttribPointer(9, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(2 * sizeof(float)));
-    glVertexAttribPointer(10, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glVertexAttribPointer(11, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(4 * sizeof(float)));
-    glVertexAttribPointer(12, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
+    glVertexAttribPointer(7, 2, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)(0));
+    glVertexAttribPointer(8, 2, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)(2 * sizeof(float)));
+    glVertexAttribPointer(9, 2, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)(4 * sizeof(float)));
+    glVertexAttribPointer(10, 2, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)(6 * sizeof(float)));
+    glVertexAttribPointer(11, 2, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)(8 * sizeof(float)));
+    glVertexAttribPointer(12, 2, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)(10 * sizeof(float)));
     glVertexAttribDivisor(7, 1);
     glVertexAttribDivisor(8, 1);
     glVertexAttribDivisor(9, 1);

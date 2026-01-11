@@ -126,7 +126,11 @@ void EntityObject::setrotation(glm::vec3 rot) {
 }
 
 void EntityObject::setlight(int level, int side) {
-    lightLevels[side] = (float)level / 10.0f;
+    lightLevels[side].x = (float)level / 5.0f;
+}
+
+void EntityObject::setdarkness(int level, int side) {
+    lightLevels[side].y = (float)level / 5.0f;
 }
 
 

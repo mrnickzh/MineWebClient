@@ -32,4 +32,4 @@ def getdata():
     resp.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     return resp
 
-app.run(host="localhost", port=3000, threaded=False, debug=True)
+app.run(host="localhost", port=5000, threaded=False, debug=True)

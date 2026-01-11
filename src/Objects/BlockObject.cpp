@@ -27,6 +27,10 @@ void BlockObject::setrotation(glm::vec3 rot) {
 }
 
 void BlockObject::setlight(int level, int side) {
-    lightLevels[side] = (float)level / 10.0f;
+    lightLevels[side].x = (float)level / 5.0f;
+}
+
+void BlockObject::setdarkness(int level, int side) {
+    lightLevels[side].y = (float)level / 5.0f;
 }
 
