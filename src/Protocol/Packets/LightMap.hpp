@@ -38,7 +38,9 @@ class LightMap : public Packet {
                     chunkMap->getBlock(blockpos)->setdarkness(lights[9], 4);
                     chunkMap->getBlock(blockpos)->setdarkness(lights[11], 5);
 
-                    // if (lights[0] != 0 || lights[1] != 0 || lights[2] != 0 || lights[3] != 0 || lights[4] != 0 || lights[5] != 0) { printf("%f %f %f block %d %d %d %d %d %d light\n", blockpos.x, blockpos.y, blockpos.z, lights[0], lights[1], lights[2], lights[3], lights[4], lights[5]); }
+                    // if ((chunkpos.x == 0.0f && chunkpos.z == -1.0f) && (lights[0] != 0 || lights[2] != 0 || lights[4] != 0 || lights[6] != 0 || lights[8] != 0 || lights[10] != 0)) {
+                    //     printf("%f %f %f block %d %d %d %d %d %d light\n", blockpos.x, blockpos.y, blockpos.z, lights[0], lights[2], lights[4], lights[6], lights[8], lights[10]);
+                    // }
                 }
             }
         }
