@@ -137,6 +137,9 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float lastCounter = 0.0f;
 
+int selectedblock = 1;
+bool sprint = false;
+
 float maxH = 0.05f;
 
 GLuint vertexShader;
@@ -207,18 +210,19 @@ void processInput()
     if (Main::serverConnected) {
         glm::vec3 rotation = Main::localPlayer->object->rotation;
         if (!ourCamera->freeCam) {
+            float speed = (sprint ? 0.075f : 0.05f);
             glm::vec3 totalvelocity = glm::vec3(0.0f, 0.0f, 0.0f);
             if (InputHandler::isKeyPressed("KeyW"))
-                totalvelocity += glm::vec3(0.05f, 0.0f, 0.0f);
+                totalvelocity += glm::vec3(speed, 0.0f, 0.0f);
             if (InputHandler::isKeyPressed("KeyS"))
-                totalvelocity += glm::vec3(-0.05f, 0.0f, 0.0f);
+                totalvelocity += glm::vec3(-speed, 0.0f, 0.0f);
             if (InputHandler::isKeyPressed("KeyA"))
-                totalvelocity += glm::vec3(0.0f, 0.0f, -0.05f);
+                totalvelocity += glm::vec3(0.0f, 0.0f, -speed);
             if (InputHandler::isKeyPressed("KeyD"))
-                totalvelocity += glm::vec3(0.0f, 0.0f, 0.05f);
-            Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, totalvelocity, glm::vec3(maxH, 0.1f, maxH));
+                totalvelocity += glm::vec3(0.0f, 0.0f, speed);
+            Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, totalvelocity, glm::vec3((sprint ? maxH*1.5 : maxH), 0.1f, (sprint ? maxH*1.5 : maxH)));
             if (InputHandler::isKeyPressed("Space") && Main::physicsEngine->isOnFoot(Main::localPlayer->object)) {
-                Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3(maxH, 0.1f, maxH));
+                Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3((sprint ? maxH*1.5 : maxH), 0.1f, (sprint ? maxH*1.5 : maxH)));
             }
             // if (Main::physicsEngine->getVelocity(Main::localPlayer->object) != glm::vec3(0.0f, 0.0f, 0.0f)) {
             PlayerAuthInput packet;
@@ -305,7 +309,7 @@ void processInput()
                     EditChunk packet;
                     packet.chunkpos = obj.prevchunkpos;
                     packet.blockpos = obj.prevblockpos;
-                    packet.id = 5;
+                    packet.id = selectedblock;
                     SocketClient::sendPacket(&packet);
                 }
                 else { std::cout << "blocked" << std::endl; }
@@ -325,6 +329,29 @@ void processInput()
         }
         if (InputHandler::isKeyReleased("KeyP") && saveLock) {
             saveLock = false;
+        }
+
+        if (InputHandler::isKeyPressed("ShiftLeft")) {
+            sprint = true;
+        }
+        if (InputHandler::isKeyReleased("ShiftLeft")) {
+            sprint = false;
+        }
+
+        if (InputHandler::isKeyPressed("Digit1")) {
+            selectedblock = 1;
+        }
+        if (InputHandler::isKeyPressed("Digit2")) {
+            selectedblock = 2;
+        }
+        if (InputHandler::isKeyPressed("Digit3")) {
+            selectedblock = 3;
+        }
+        if (InputHandler::isKeyPressed("Digit4")) {
+            selectedblock = 4;
+        }
+        if (InputHandler::isKeyPressed("Digit5")) {
+            selectedblock = 5;
         }
     }
 }
@@ -354,7 +381,7 @@ void render() {
     glm::vec3 playerPos = Main::localPlayer->object->position;
     glm::vec3 playerChunk = glm::vec3(floor(playerPos.x / 8.0f), floor(playerPos.y / 8.0f), floor(playerPos.z / 8.0f));
 
-    std::string coordsstr = "x: " + std::to_string(playerPos.x) + " y: " + std::to_string(playerPos.y) + " z: " + std::to_string(playerPos.z) + " cx: " + std::to_string((int)playerChunk.x) + " cy: " + std::to_string((int)playerChunk.y) + " cz: " + std::to_string((int)playerChunk.z);
+    std::string coordsstr = "x: " + std::to_string(playerPos.x) + " y: " + std::to_string(playerPos.y) + " z: " + std::to_string(playerPos.z) + " cx: " + std::to_string((int)playerChunk.x) + " cy: " + std::to_string((int)playerChunk.y) + " cz: " + std::to_string((int)playerChunk.z) + " blk: " + std::to_string(selectedblock);
     std::shared_ptr<Element> e = Main::gameUIManager->getElement("coords");
     dynamic_cast<TextElement*>(e.get())->setText(coordsstr);
 
@@ -599,7 +626,7 @@ int main() {
     Main::gameUIManager->addElement(crosshair);
     std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int, int, int){}, 0, 40, 20, Main::fontManager, false);
     coords->color = glm::vec3(0.0f, 0.0f, 0.0f);
-    coords->setText("x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0");
+    coords->setText("x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0, blk: 1");
     Main::gameUIManager->addElement(coords);
 
     Main::menuManager = new GUIManager();

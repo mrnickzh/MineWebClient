@@ -28,6 +28,7 @@ EM_BOOL InputHandler::keyPressed(int, const EmscriptenKeyboardEvent* e, void*) {
     chars.insert(std::string(e->code));
     KeyEvent event(std::string(e->code), true);
     strcpy(event.code, e->key);
+    std::cout << e->code << std::endl;
     EventBus::getInstance().publish(&event);
     if (event.canceled) return true;
     return EM_FALSE;
