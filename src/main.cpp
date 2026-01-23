@@ -182,7 +182,7 @@ extern "C" {
     int load_world() {
         Main::serverAddress = "localhost";
         Main::serverInstance.loadWorld();
-        SocketClient::connect();
+        SocketClient::getInstance().connect();
         std::shared_ptr<Element> e = Main::menuManager->getElement("ipenter");
         dynamic_cast<EnterElement*>(e.get())->enteractive = false;
         Main::menuManager->active = false;
@@ -226,7 +226,7 @@ void processInput()
             }
             // if (Main::physicsEngine->getVelocity(Main::localPlayer->object) != glm::vec3(0.0f, 0.0f, 0.0f)) {
             PlayerAuthInput packet;
-            SocketClient::sendPacket(&packet);
+            SocketClient::getInstance().sendPacket(&packet);
             // }
         }
         else {
@@ -285,7 +285,7 @@ void processInput()
                 packet.chunkpos = obj.chunkpos;
                 packet.blockpos = obj.blockpos;
                 packet.id = 0;
-                SocketClient::sendPacket(&packet);
+                SocketClient::getInstance().sendPacket(&packet);
             }
             else { std::cout << "nothing" << std::endl; }
 
@@ -310,7 +310,7 @@ void processInput()
                     packet.chunkpos = obj.prevchunkpos;
                     packet.blockpos = obj.prevblockpos;
                     packet.id = selectedblock;
-                    SocketClient::sendPacket(&packet);
+                    SocketClient::getInstance().sendPacket(&packet);
                 }
                 else { std::cout << "blocked" << std::endl; }
             }
@@ -401,7 +401,7 @@ void render() {
                         Main::requestedChunks.push_back(requestedChunk);
                         GenerateChunk pkt;
                         pkt.chunkpos = requestedChunk;
-                        SocketClient::sendPacket(&pkt);
+                        SocketClient::getInstance().sendPacket(&pkt);
                     }
                     continue;
                 }
@@ -527,6 +527,16 @@ void mainLoop() {
         dynamic_cast<TextElement*>(e.get())->setText("FPS: " + std::to_string(fps));
         dynamic_cast<TextElement*>(e.get())->color = glm::vec3(std::max(1.0f - ((float)fps / 255.0f), 0.0f), 0.0f, 0.0f);
         lastCounter = (float)glfwGetTime();
+    }
+
+    if (Main::isSingleplayer) {
+        // std::cout << SocketClient::getInstance().clientPacketQueue.size() << " queue" << std::endl;
+        if (!SocketClient::getInstance().clientPacketQueue.empty()) {
+            std::lock_guard<std::mutex> guard(SocketClient::getInstance().clientPacketQueueMutex);
+            std::pair<ClientSession*, std::vector<uint8_t>> packet = SocketClient::getInstance().clientPacketQueue.front();
+            PacketHelper::decodePacket(packet.second);
+            SocketClient::getInstance().clientPacketQueue.pop_front();
+        }
     }
 }
 
@@ -658,7 +668,7 @@ int main() {
         if (stateMask != (LEFT_CLICK)) { return; }
         if (x > (joinbutton->x - 5) && x < (joinbutton->x - 5 + 10 * joinbutton->text.length()) && y > (joinbutton->y - 25) && y < (joinbutton->y + 5)) {
             Main::serverAddress = ipenter->text;
-            SocketClient::connect();
+            SocketClient::getInstance().connect();
             ipenter->enteractive = false;
             Main::menuManager->active = false;
             Main::gameUIManager->active = true;
@@ -672,7 +682,7 @@ int main() {
         if (stateMask != (LEFT_CLICK)) { return; }
         if (x > (localbutton->x - 5) && x < (localbutton->x - 5 + 10 * localbutton->text.length()) && y > (localbutton->y - 25) && y < (localbutton->y + 5)) {
             Main::serverAddress = "localhost";
-            SocketClient::connect();
+            SocketClient::getInstance().connect();
             ipenter->enteractive = false;
             Main::menuManager->active = false;
             Main::gameUIManager->active = true;
@@ -713,9 +723,9 @@ int main() {
     Main::physicsEngine = std::make_unique<PhysicsEngine>(&Main::chunks);
 
     // Main::isSingleplayer = true;
-    // Main::serverInstance.setCallback(SocketClient::on_message);
-    // SocketClient::on_open();
-    // SocketClient::connect();
+    // Main::serverInstance.setCallback(SocketClient::getInstance().on_message);
+    // SocketClient::getInstance().on_open();
+    // SocketClient::getInstance().connect();
 
     Main::localPlayer = std::make_shared<Entity>();
     Main::localPlayer->uuid = "local";

@@ -1,6 +1,7 @@
 #include <emscripten/websocket.h>
 #include <cstdio>
 #include "Socket.hpp"
+
 #include "PacketHelper.hpp"
 #include "../main.hpp"
 #include "Packets/HandShakePacket.hpp"
@@ -21,24 +22,30 @@ void SocketClient::on_open() {
 }
 
 void SocketClient::on_message(ClientSession* session, std::vector<uint8_t> data) {
-    PacketHelper::decodePacket(data);
+    if (Main::isSingleplayer) {
+        std::lock_guard<std::mutex> guard(clientPacketQueueMutex);
+        clientPacketQueue.push_back(std::pair<ClientSession*, std::vector<uint8_t>>(session, data));
+    }
+    else {
+        PacketHelper::decodePacket(data);
+    }
 }
 
 EM_BOOL remote_open(int type, const EmscriptenWebSocketOpenEvent *e, void *userData) {
-    SocketClient::on_open();
+    SocketClient::getInstance().on_open();
     return EM_TRUE;
 }
 
 EM_BOOL remote_message(int type, const EmscriptenWebSocketMessageEvent *e, void *userData) {
     std::vector<uint8_t> vec(e->data, e->data + e->numBytes);
-    SocketClient::on_message(localSession, vec);
+    SocketClient::getInstance().on_message(localSession, vec);
     return EM_TRUE;
 }
 
 void SocketClient::connect() {
     if (Main::serverAddress == "localhost") {
         Main::isSingleplayer = true;
-        Main::serverInstance.setCallback(on_message);
+        Main::serverInstance.setCallback([&](ClientSession* session, std::vector<uint8_t> data){on_message(session, data);});
         on_open();
         return;
     }
