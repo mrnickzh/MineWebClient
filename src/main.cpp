@@ -532,10 +532,13 @@ void mainLoop() {
     if (Main::isSingleplayer) {
         // std::cout << SocketClient::getInstance().clientPacketQueue.size() << " queue" << std::endl;
         if (!SocketClient::getInstance().clientPacketQueue.empty()) {
-            std::lock_guard<std::mutex> guard(SocketClient::getInstance().clientPacketQueueMutex);
-            std::pair<ClientSession*, std::vector<uint8_t>> packet = SocketClient::getInstance().clientPacketQueue.front();
-            PacketHelper::decodePacket(packet.second);
-            SocketClient::getInstance().clientPacketQueue.pop_front();
+            // std::lock_guard<std::mutex> guard(SocketClient::getInstance().clientPacketQueueMutex);
+            if (SocketClient::getInstance().clientPacketQueueMutex.try_lock()) {
+                std::pair<ClientSession*, std::vector<uint8_t>> packet = SocketClient::getInstance().clientPacketQueue.front();
+                PacketHelper::decodePacket(packet.second);
+                SocketClient::getInstance().clientPacketQueue.pop_front();
+                SocketClient::getInstance().clientPacketQueueMutex.unlock();
+            }
         }
     }
 }

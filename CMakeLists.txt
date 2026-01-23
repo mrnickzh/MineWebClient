@@ -30,7 +30,7 @@ target_link_options(MineWebClient PRIVATE
         "SHELL:-s FORCE_FILESYSTEM=1"
         "SHELL:-s USE_PTHREADS=1"
         "SHELL:-s ENVIRONMENT=web,worker"
-        "SHELL:-s PTHREAD_POOL_SIZE=4"
+        "SHELL:-s PTHREAD_POOL_SIZE=2"
         "SHELL:-s STACK_SIZE=16777216"
         "SHELL:-s INITIAL_MEMORY=134217728"
         "SHELL:-s EXPORTED_FUNCTIONS=['_main','_load_world']"
