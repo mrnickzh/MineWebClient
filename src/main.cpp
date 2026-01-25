@@ -154,7 +154,7 @@ bool loadLock = false;
 bool raiseLock = false;
 bool lowerLock = false;
 
-int renderDistance = 1;
+int renderDistance = 3; // 3 min
 Frustum cameraFrustum;
 
 float ambientLevel = 0.2f;
@@ -394,6 +394,8 @@ void render() {
     for (int i = -renderDistance; i <= renderDistance; i++) {
         for (int j = -renderDistance; j <= renderDistance; j++) {
             for (int k = -renderDistance; k <= renderDistance; k++) {
+                if (abs(i)+abs(j)+abs(k) > renderDistance) { continue; }
+
                 glm::vec3 requestedChunk = glm::vec3(playerChunk.x + (float)i, playerChunk.y + (float)j, playerChunk.z + (float)k);
 
                 if (Main::chunks.find(requestedChunk) == Main::chunks.end()) {
