@@ -13,6 +13,9 @@ enum MouseButtons {
 
 class InputHandler {
 public:
+    static EM_BOOL touchMoved(int, const EmscriptenTouchEvent* e, void*);
+    static EM_BOOL touchStart(int, const EmscriptenTouchEvent* e, void*);
+    static EM_BOOL touchEnd(int, const EmscriptenTouchEvent* e, void*);
     static EM_BOOL mouseMoved(int, const EmscriptenMouseEvent* e, void*);
     static EM_BOOL mouseButton(int eventType, const EmscriptenMouseEvent* e, void*);
     static EM_BOOL keyPressed(int, const EmscriptenKeyboardEvent* e, void*);
@@ -21,4 +24,6 @@ public:
     static bool isKeyReleased(const std::string& key);
     static bool isMousePressed(int key);
     static bool isMouseReleased(int key);
+    static void addKey(std::string key);
+    static void removeKey(std::string key);
 };

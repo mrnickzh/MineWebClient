@@ -21,6 +21,7 @@ namespace Main {
 
     inline GUIManager* menuManager;
     inline GUIManager* gameUIManager;
+    inline GUIManager* touchManager;
 
     inline std::map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Comparator> chunks;
     inline std::vector<glm::vec3> requestedChunks;
@@ -37,4 +38,6 @@ namespace Main {
 
     inline int mouseX = 0;
     inline int mouseY = 0;
+
+    inline bool isMobile = false;
 }
