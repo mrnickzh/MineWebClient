@@ -187,6 +187,7 @@ extern "C" {
         dynamic_cast<EnterElement*>(e.get())->enteractive = false;
         Main::menuManager->active = false;
         Main::gameUIManager->active = true;
+        if (Main::isMobile) { Main::touchManager->active = true; }
         return 0;
     }
 }
@@ -719,7 +720,7 @@ int main() {
 
     Main::touchManager = new GUIManager();
     std::shared_ptr<TextElement> moveforward = std::make_shared<TextElement>("moveforward", [&](int x, int y, int stateMask) {
-        if (stateMask != (LEFT_CLICK)) { return; }
+        if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyW"); return; }
         if (x > (moveforward->x - 5) && x < (moveforward->x - 5 + 10 * moveforward->text.length()) && y > (moveforward->y - 25) && y < (moveforward->y + 5)) {
             InputHandler::addKey("KeyW");
         }
@@ -732,7 +733,7 @@ int main() {
     moveforward->setText("/\\");
     Main::touchManager->addElement(moveforward);
     std::shared_ptr<TextElement> movebackward = std::make_shared<TextElement>("movebackward", [&](int x, int y, int stateMask) {
-        if (stateMask != (LEFT_CLICK)) { return; }
+        if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyS"); return; }
         if (x > (movebackward->x - 5) && x < (movebackward->x - 5 + 10 * movebackward->text.length()) && y > (movebackward->y - 25) && y < (movebackward->y + 5)) {
             InputHandler::addKey("KeyS");
         }
@@ -745,7 +746,7 @@ int main() {
     movebackward->setText("\\/");
     Main::touchManager->addElement(movebackward);
     std::shared_ptr<TextElement> moveright = std::make_shared<TextElement>("moveright", [&](int x, int y, int stateMask) {
-        if (stateMask != (LEFT_CLICK)) { return; }
+        if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyD"); return; }
         if (x > (moveright->x - 5) && x < (moveright->x - 5 + 10 * moveright->text.length()) && y > (moveright->y - 25) && y < (moveright->y + 5)) {
             InputHandler::addKey("KeyD");
         }
@@ -758,7 +759,7 @@ int main() {
     moveright->setText(">>");
     Main::touchManager->addElement(moveright);
     std::shared_ptr<TextElement> moveleft = std::make_shared<TextElement>("moveleft", [&](int x, int y, int stateMask) {
-        if (stateMask != (LEFT_CLICK)) { return; }
+        if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyA"); return; }
         if (x > (moveleft->x - 5) && x < (moveleft->x - 5 + 10 * moveleft->text.length()) && y > (moveleft->y - 25) && y < (moveleft->y + 5)) {
             InputHandler::addKey("KeyA");
         }
@@ -771,7 +772,7 @@ int main() {
     moveleft->setText("<<");
     Main::touchManager->addElement(moveleft);
     std::shared_ptr<TextElement> movejump = std::make_shared<TextElement>("movejump", [&](int x, int y, int stateMask) {
-        if (stateMask != (LEFT_CLICK)) { return; }
+        if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("Space"); return; }
         if (x > (movejump->x - 5) && x < (movejump->x - 5 + 10 * movejump->text.length()) && y > (movejump->y - 25) && y < (movejump->y + 5)) {
             InputHandler::addKey("Space");
         }
@@ -784,7 +785,7 @@ int main() {
     movejump->setText("^");
     Main::touchManager->addElement(movejump);
     std::shared_ptr<TextElement> leftclick = std::make_shared<TextElement>("leftclick", [&](int x, int y, int stateMask) {
-        if (stateMask != (LEFT_CLICK)) { return; }
+        if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("LeftMouse"); return; }
         if (x > (leftclick->x - 5) && x < (leftclick->x - 5 + 10 * leftclick->text.length()) && y > (leftclick->y - 25) && y < (leftclick->y + 5)) {
             InputHandler::addKey("LeftMouse");
         }
@@ -797,7 +798,7 @@ int main() {
     leftclick->setText("LMB");
     Main::touchManager->addElement(leftclick);
     std::shared_ptr<TextElement> rightclick = std::make_shared<TextElement>("rightclick", [&](int x, int y, int stateMask) {
-        if (stateMask != (LEFT_CLICK)) { return; }
+        if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("RightMouse"); return; }
         if (x > (rightclick->x - 5) && x < (rightclick->x - 5 + 10 * rightclick->text.length()) && y > (rightclick->y - 25) && y < (rightclick->y + 5)) {
             InputHandler::addKey("RightMouse");
         }
