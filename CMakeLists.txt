@@ -33,7 +33,7 @@ target_link_options(MineWebClient PRIVATE
         "SHELL:-s PTHREAD_POOL_SIZE=3"
         "SHELL:-s STACK_SIZE=16777216"
         "SHELL:-s INITIAL_MEMORY=134217728"
-        "SHELL:-s EXPORTED_FUNCTIONS=['_main','_load_world']"
+        "SHELL:-s EXPORTED_FUNCTIONS=['_main','_load_world','_input_char']"
         "SHELL:-s EXPORTED_RUNTIME_METHODS=['ccall']"
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/assets@/assets"
         "SHELL:-s NO_DISABLE_EXCEPTION_CATCHING"

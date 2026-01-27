@@ -36,8 +36,32 @@
 <div id="preloader"><progress id="progressBar"></progress></div>
 <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
 <input type="file" id="myfile" style="display: none;" onchange="load_file()">
+<input type="text" id="fakeinput" style="top: -100px; position: fixed;" oninput="newChar()">
 
 <script>
+    document.getElementById('fakeinput').value = ""
+    var inputSize = document.getElementById('fakeinput').value.length;
+
+    function newChar(){
+        if (document.getElementById('fakeinput').value.length < inputSize) {
+            inputSize = document.getElementById('fakeinput').value.length;
+            Module.ccall('input_char', 'number', ['number'], [8]);
+        }
+        else if (document.getElementById('fakeinput').value.length > inputSize) {
+            inputSize = document.getElementById('fakeinput').value.length;
+            Module.ccall('input_char', 'number', ['number'], [document.getElementById('fakeinput').value.charCodeAt(inputSize - 1)]);
+        }
+    }
+
+    function callKeyboard(hide){
+        if (hide) {
+            document.getElementById('fakeinput').blur();
+        }
+        else {
+            document.getElementById('fakeinput').focus();
+        }
+    }
+
     var Module = {
         preRun: [],
         postRun: [function() {

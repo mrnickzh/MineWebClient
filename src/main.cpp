@@ -190,6 +190,18 @@ extern "C" {
         if (Main::isMobile) { Main::touchManager->active = true; }
         return 0;
     }
+
+    int input_char(int charcode) {
+        if (!Main::isMobile) { return 0; }
+        if (charcode > 127) { return 0; }
+        std::shared_ptr<Element> e = Main::menuManager->getElement("ipenter");
+        if (charcode == 8) {
+            dynamic_cast<EnterElement*>(e.get())->removeChar();
+            return 0;
+        }
+        dynamic_cast<EnterElement*>(e.get())->addChar((char)charcode);
+        return 0;
+    }
 }
 
 EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
@@ -668,11 +680,13 @@ int main() {
         if (stateMask != (LEFT_CLICK)) { return; }
         if (x > (ipenter->x - 5) && x < (ipenter->x + 10 * ipenter->maxlen) && y > (ipenter->y - 25) && y < (ipenter->y + 5)) {
             ipenter->enteractive = true;
+            if (Main::isMobile) { emscripten_run_script("callKeyboard(false)"); }
         }
         else {
             ipenter->enteractive = false;
+            if (Main::isMobile) { emscripten_run_script("callKeyboard(true)"); }
         }
-    }, 100, 200, 20, Main::fontManager, 64, "wss://example.com", true);
+    }, 100, 200, 20, Main::fontManager, 64, "", true);
     ipenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
     ipenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
     Main::menuManager->addElement(ipenter);
@@ -813,11 +827,12 @@ int main() {
     Main::touchManager->active = false;
 
     L_SUBSCRIBE(KeyEvent, [](KeyEvent* event) {
-        if (event->state && !Main::serverConnected) {
+        if (event->state && !Main::serverConnected && !Main::isMobile) {
             std::shared_ptr<Element> e = Main::menuManager->getElement("ipenter");
 
             if (event->key == "Backspace") {
                 dynamic_cast<EnterElement*>(e.get())->removeChar();
+                return;
             }
 
             if (strlen(event->code) > 1) { return; }
