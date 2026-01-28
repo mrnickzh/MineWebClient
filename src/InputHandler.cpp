@@ -22,7 +22,6 @@ EM_BOOL InputHandler::touchMoved(int eventType, const EmscriptenTouchEvent* e, v
 
 EM_BOOL InputHandler::touchStart(int eventType, const EmscriptenTouchEvent* e, void*) {
     if (!Main::isMobile) { Main::isMobile = true; }
-    emscripten_request_fullscreen("canvas", EM_TRUE);
     touch0 = e->touches[0];
     float cx = (float)e->touches[0].clientX;
     float cy = (float)e->touches[0].clientY;

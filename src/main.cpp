@@ -216,6 +216,9 @@ EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     std::shared_ptr<Element> vl = Main::menuManager->getElement("verlabel");
     vl->setPosition((windowWidth/2)-60, vl->y);
 
+    std::shared_ptr<Element> cfs = Main::touchManager->getElement("callfullscreen");
+    cfs->setPosition((windowWidth/18)*17, windowHeight/12);
+
     std::shared_ptr<Element> lmb = Main::touchManager->getElement("leftclick");
     lmb->setPosition((windowWidth/18)*2, windowHeight/6);
     std::shared_ptr<Element> rmb = Main::touchManager->getElement("rightclick");
@@ -759,6 +762,16 @@ int main() {
 
     {
         Main::touchManager = new GUIManager();
+        std::shared_ptr<TextElement> callfullscreen = std::make_shared<TextElement>("callfullscreen", [&](int x, int y, int stateMask) {
+            if (stateMask != (LEFT_CLICK)) { return; }
+            if (x > (callfullscreen->x - 5) && x < (callfullscreen->x - 5 + 10 * callfullscreen->text.length()) && y > (callfullscreen->y - 25) && y < (callfullscreen->y + 5)) {
+                emscripten_request_fullscreen("canvas", EM_TRUE);
+            }
+        }, 600, 20, 20, Main::fontManager, true);
+        callfullscreen->color = glm::vec3(1.0f, 1.0f, 1.0f);
+        callfullscreen->bcolor = glm::vec3(1.0f, 1.0f, 0.5f);
+        callfullscreen->setText("FLSCRN");
+        Main::touchManager->addElement(callfullscreen);
         std::shared_ptr<TextElement> moveforward = std::make_shared<TextElement>("moveforward", [&](int x, int y, int stateMask) {
             if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyW"); return; }
             if (x > (moveforward->x - 5) && x < (moveforward->x - 5 + 10 * moveforward->text.length()) && y > (moveforward->y - 25) && y < (moveforward->y + 5)) {
