@@ -403,11 +403,21 @@ void preRender() {
     glEnable(GL_CULL_FACE);
     glDisable(GL_BLEND);
 
-    Main::ourShader->use();
-
     glm::mat4 projection;
     projection = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
 
+    Main::entityShader->use();
+    glUniformMatrix4fv(Main::entityShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
+    glUniformMatrix4fv(Main::entityShader->uniforms["view"], 1, GL_FALSE, &ourCamera->GetViewMatrix()[0][0]);
+    glUniform1i(Main::entityShader->uniforms["textureSampler"], 0);
+
+    Main::localPlayer->object->setposition(Main::localPlayer->object->position);
+    Main::localPlayer->object->render();
+    for (auto& entity : Main::entities) {
+        entity->object->render();
+    }
+
+    Main::ourShader->use();
     glUniformMatrix4fv(Main::ourShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
     glUniformMatrix4fv(Main::ourShader->uniforms["view"], 1, GL_FALSE, &ourCamera->GetViewMatrix()[0][0]);
     glUniform1f(Main::ourShader->uniforms["ambientLevel"], ambientLevel);
@@ -461,13 +471,6 @@ void render() {
                 }
             }
         }
-    }
-
-    Main::localPlayer->object->setposition(Main::localPlayer->object->position);
-    // Main::localPlayer->object->render();
-
-    for (auto& entity : Main::entities) {
-        entity->object->render();
     }
 
     // AABB kek = GetAABB::CP2AABB(Main::chunks[glm::vec3(0.0f, -1.0f, 0.0f)]->getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->collider, Main::chunks[glm::vec3(0.0f, -1.0f, 0.0f)]->getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->position);
@@ -640,6 +643,7 @@ int main() {
 
     Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}, {"ambientLevel", 0}, {"chunkSampler", 0}});
     Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}, {"background", 0}, {"texindex", 0}});
+    Main::entityShader = new Shader("/assets/shaders/vertentity.glsl", "/assets/shaders/fragentity.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}});
 
     std::vector<int> fontsizes = {20, 40};
     Main::fontManager = new FontManager();
