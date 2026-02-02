@@ -412,6 +412,7 @@ void preRender() {
     glUniformMatrix4fv(Main::ourShader->uniforms["view"], 1, GL_FALSE, &ourCamera->GetViewMatrix()[0][0]);
     glUniform1f(Main::ourShader->uniforms["ambientLevel"], ambientLevel);
     glUniform1i(Main::ourShader->uniforms["textureSampler"], 0);
+    glUniform1i(Main::ourShader->uniforms["chunkSampler"], 2);
 }
 
 void render() {
@@ -451,6 +452,10 @@ void render() {
 
                 std::shared_ptr<ChunkMap> chunk = Main::chunks[requestedChunk];
 
+                // if (requestedChunk == glm::vec3(0.0f, 0.0f, 0.0f)) {
+                //     chunk->renderChunk();
+                // }
+
                 if (chunk->checkCull(cameraFrustum, requestedChunk)) {
                     chunk->renderChunk();
                 }
@@ -459,7 +464,7 @@ void render() {
     }
 
     Main::localPlayer->object->setposition(Main::localPlayer->object->position);
-    Main::localPlayer->object->render();
+    // Main::localPlayer->object->render();
 
     for (auto& entity : Main::entities) {
         entity->object->render();
@@ -633,7 +638,7 @@ int main() {
             ourCamera->ProcessMouseMovement(dx, -dy);
     });
 
-    Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}, {"ambientLevel", 0}});
+    Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}, {"ambientLevel", 0}, {"chunkSampler", 0}});
     Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}, {"background", 0}, {"texindex", 0}});
 
     std::vector<int> fontsizes = {20, 40};

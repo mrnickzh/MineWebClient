@@ -10,6 +10,9 @@ EntityObject::EntityObject(glm::vec3 position, glm::vec3 rotation, int vboid, in
     model *= glm::mat4_cast(glm::quat(glm::radians(-rotation)));
 
     ftexture = (float)texture;
+    for (int i = 0; i < 6; i++) {
+        lightLevels[i].y = 0.0f;
+    }
 
     glGenVertexArrays(1, &VAO);
 
@@ -25,7 +28,7 @@ EntityObject::EntityObject(glm::vec3 position, glm::vec3 rotation, int vboid, in
 
     glGenBuffers(1, &LBO);
     glBindBuffer(GL_ARRAY_BUFFER, LBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 36, &lightLevels[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 36 * 2, &lightLevels[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -62,8 +65,8 @@ void EntityObject::render() {
 
     glBindBuffer(GL_ARRAY_BUFFER, LBO);
     glEnableVertexAttribArray(7);
-    glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
-    glVertexAttribDivisor(7, 0);
+    glVertexAttribPointer(7, 2, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
+    glVertexAttribDivisor(7, 1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // for (int i = 0; i < 4; i++) {
@@ -97,7 +100,7 @@ void EntityObject::setposition(glm::vec3 pos) {
 
     glGenBuffers(1, &LBO);
     glBindBuffer(GL_ARRAY_BUFFER, LBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 36, &lightLevels[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 36 * 2, &lightLevels[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 

@@ -49,7 +49,7 @@ class LightMap : public Packet {
         //     // std::cout << chunkpos.x << " " << chunkpos.y << " " << chunkpos.z << std::endl;
         // }
 
-        chunkMap->initTranslations();
+        chunkMap->initBlocks();
     }
     void send(ByteBuf &buffer) override {}
 };
