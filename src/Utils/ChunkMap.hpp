@@ -9,7 +9,8 @@
 
 class ChunkMap {
 public:
-    std::map<glm::vec3, std::shared_ptr<Object>, vec3Comparator> blocks;
+    // std::map<glm::vec3, std::shared_ptr<Object>, vec3Comparator> blocks;
+    std::array<std::shared_ptr<Object>, 512> blocks;
     glm::mat4 translations[6*6*512];
     float sides[30*6*512];
     float textures[6*6*512];

@@ -89,11 +89,11 @@ ChunkMap::ChunkMap() {
 
 
 void ChunkMap::addBlock(glm::vec3 blockPos, std::shared_ptr<Object> block) {
-    blocks[blockPos] = block;
+    blocks[(int)(blockPos.x * 64.0f + blockPos.y * 8.0f + blockPos.z)] = block;
 }
 
 std::shared_ptr<Object> ChunkMap::getBlock(glm::vec3 blockPos) {
-    return blocks[blockPos];
+    return blocks[(int)(blockPos.x * 64.0f + blockPos.y * 8.0f + blockPos.z)];
 }
 
 void ChunkMap::initTranslations() {
@@ -161,8 +161,8 @@ void ChunkMap::initTranslations() {
                             break;
                     }
                     glm::vec3 pos = glm::vec3(x, y, z);
-                    bool bcurrent = blocks[glm::vec3(cx, cy, cz)]->cancollide;
-                    bool bcompare = (checkValidPos(pos) && blocks[pos]->cancollide);
+                    bool bcurrent = getBlock(glm::vec3(cx, cy, cz))->cancollide;
+                    bool bcompare = (checkValidPos(pos) && getBlock(pos)->cancollide);
                     // std::cout << pos.x << ", " << pos.y << ", " << pos.z << ", " << (bcurrent && !bcompare) << std::endl;
                     mask[n++] = bcurrent && !bcompare;
                 }
@@ -243,7 +243,7 @@ void ChunkMap::initTranslations() {
                             sides[(30 * instanceCount) + (5 * jj) + 4] = sidevertices[30*side + (5 * jj) + 4];
                         }
                         for (int ii = 0; ii < 6; ii++) {
-                            translations[6 * instanceCount + ii] =  glm::translate(glm::mat4(1.0f), glm::vec3(blocks[glm::vec3(0.0f, 0.0f, 0.0f)]->position.x + 3.5f, blocks[glm::vec3(0.0f, 0.0f, 0.0f)]->position.y + 3.5f, blocks[glm::vec3(0.0f, 0.0f, 0.0f)]->position.z + 3.5f));
+                            translations[6 * instanceCount + ii] =  glm::translate(glm::mat4(1.0f), glm::vec3(getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->position.x + 3.5f, getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->position.y + 3.5f, getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->position.z + 3.5f));
                             textures[6 * instanceCount + ii] = (float)side;
                         }
                         instanceCount++;
@@ -296,13 +296,13 @@ void ChunkMap::initBlocks() {
                 uint16_t result[4] = {0, 0, 0, 0};
                 uint64_t* pack = (uint64_t*)result;
 
-                *pack |= ((uint64_t)blocks[pos]->texture & 0xff);
+                *pack |= ((uint64_t)getBlock(pos)->texture & 0xff);
 
                 int shift = 16;
                 for (int i = 0; i < 3; i++) {
                     for (int j = 0; j < 2; j++) {
-                        *pack |= ((uint64_t)((int)(blocks[pos]->lightLevels[i * 2 + j].x * 5)) & 0x7) << (shift + (6 * j));
-                        *pack |= ((uint64_t)(abs((int)(blocks[pos]->lightLevels[i * 2 + j].y * 5))) & 0x7) << (shift + (6 * j) + 3);
+                        *pack |= ((uint64_t)((int)(getBlock(pos)->lightLevels[i * 2 + j].x * 5)) & 0x7) << (shift + (6 * j));
+                        *pack |= ((uint64_t)(abs((int)(getBlock(pos)->lightLevels[i * 2 + j].y * 5))) & 0x7) << (shift + (6 * j) + 3);
                     }
                     shift += 16;
                 }
