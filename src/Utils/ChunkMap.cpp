@@ -56,6 +56,14 @@ bool checkValidPos(glm::vec3 pos) {
     return false;
 }
 
+ChunkMap::~ChunkMap() {
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &IVBO);
+    glDeleteBuffers(1, &TBO);
+    glDeleteTextures(1, &chunkTexture);
+}
+
 ChunkMap::ChunkMap() {
     glGenVertexArrays(1, &VAO);
 
@@ -268,17 +276,14 @@ void ChunkMap::initTranslations() {
         }
     }
 
-    glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 30 * 6 * 512, &sides[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glGenBuffers(1, &IVBO);
     glBindBuffer(GL_ARRAY_BUFFER, IVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 512 * 6 * 6, &translations[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glGenBuffers(1, &TBO);
     glBindBuffer(GL_ARRAY_BUFFER, TBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 512 * 6 * 6, &textures[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);

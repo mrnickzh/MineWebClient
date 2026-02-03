@@ -25,7 +25,7 @@ namespace Main {
     inline GUIManager* touchManager;
 
     inline std::map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Comparator> chunks;
-    inline std::vector<glm::vec3> requestedChunks;
+    inline std::set<glm::vec3, vec3Comparator> requestedChunks;
 
     inline std::unique_ptr<PhysicsEngine> physicsEngine;
 

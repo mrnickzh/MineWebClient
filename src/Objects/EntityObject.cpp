@@ -75,14 +75,10 @@ void EntityObject::setposition(glm::vec3 pos) {
     model = glm::translate(glm::mat4(1.0f), position);
     model *= glm::mat4_cast(glm::quat(glm::radians(-rotation)));
 
-    glDeleteBuffers(1, &IVBO);
-    glGenBuffers(1, &IVBO);
     glBindBuffer(GL_ARRAY_BUFFER, IVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4), glm::value_ptr(model), GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glDeleteBuffers(1, &TBO);
-    glGenBuffers(1, &TBO);
     glBindBuffer(GL_ARRAY_BUFFER, TBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float), &ftexture, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -94,14 +90,10 @@ void EntityObject::setrotation(glm::vec3 rot) {
     model = glm::translate(glm::mat4(1.0f), position);
     model *= glm::mat4_cast(glm::quat(glm::radians(-rotation)));
 
-    glDeleteBuffers(1, &IVBO);
-    glGenBuffers(1, &IVBO);
     glBindBuffer(GL_ARRAY_BUFFER, IVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4), glm::value_ptr(model), GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glDeleteBuffers(1, &TBO);
-    glGenBuffers(1, &TBO);
     glBindBuffer(GL_ARRAY_BUFFER, TBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float), &ftexture, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);

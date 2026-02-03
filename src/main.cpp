@@ -439,16 +439,19 @@ void render() {
 
     // std::cout << playerChunk.x << " " << playerChunk.y << " " << playerChunk.z << std::endl;
 
+    std::set<glm::vec3, vec3Comparator> currentChunks;
+
     for (int i = -renderDistance; i <= renderDistance; i++) {
         for (int j = -renderDistance; j <= renderDistance; j++) {
             for (int k = -renderDistance; k <= renderDistance; k++) {
                 if (abs(i)+abs(j)+abs(k) > renderDistance) { continue; }
 
                 glm::vec3 requestedChunk = glm::vec3(playerChunk.x + (float)i, playerChunk.y + (float)j, playerChunk.z + (float)k);
+                currentChunks.insert(requestedChunk);
 
                 if (Main::chunks.find(requestedChunk) == Main::chunks.end()) {
-                    if (std::find(Main::requestedChunks.begin(), Main::requestedChunks.end(), requestedChunk) == Main::requestedChunks.end()) {
-                        Main::requestedChunks.push_back(requestedChunk);
+                    if (!Main::requestedChunks.contains(requestedChunk)) {
+                        Main::requestedChunks.insert(requestedChunk);
                         GenerateChunk pkt;
                         pkt.chunkpos = requestedChunk;
                         SocketClient::getInstance().sendPacket(&pkt);
@@ -470,6 +473,14 @@ void render() {
                     chunk->renderChunk();
                 }
             }
+        }
+    }
+
+    auto tmpChunks = Main::requestedChunks;
+    for (auto& chunk : tmpChunks) {
+        if (!currentChunks.contains(chunk)) {
+            Main::chunks.erase(chunk);
+            Main::requestedChunks.erase(chunk);
         }
     }
 

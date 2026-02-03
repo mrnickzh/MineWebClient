@@ -24,6 +24,7 @@ public:
     GLuint chunkTexture = 0;
 
     ChunkMap();
+    ~ChunkMap();
 
     void addBlock(glm::vec3 blockPos, std::shared_ptr<Object> block);
     std::shared_ptr<Object> getBlock(glm::vec3 blockPos);
