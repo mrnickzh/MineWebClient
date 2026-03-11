@@ -12,7 +12,7 @@ file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "src/*.hpp")
 file(GLOB_RECURSE LIB_FILES "lib/*.cpp" "lib/*.hpp" "lib/*.h")
 add_executable(MineWebClient ${SOURCE_FILES} ${LIB_FILES})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pthread -fsanitize=undefined")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Os") # -g --fsanitize=undefined
 
 target_link_options(MineWebClient PRIVATE
         "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/src/payload.html"
@@ -36,7 +36,7 @@ target_link_options(MineWebClient PRIVATE
         "SHELL:-s EXPORTED_FUNCTIONS=['_main','_load_world','_input_char']"
         "SHELL:-s EXPORTED_RUNTIME_METHODS=['ccall']"
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/assets@/assets"
-        "SHELL:-s NO_DISABLE_EXCEPTION_CATCHING"
+        # "SHELL:-s NO_DISABLE_EXCEPTION_CATCHING"
 )
 
 target_include_directories(MineWebClient PRIVATE
