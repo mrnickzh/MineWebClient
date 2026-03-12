@@ -879,13 +879,13 @@ int main() {
         movejump->setText("^");
         Main::touchManager->addElement(movejump);
         std::shared_ptr<TextElement> leftclick = std::make_shared<TextElement>("leftclick", nullptr, 75, 50, 20, Main::fontManager, true);
-        leftclick->callback = [&, movejump](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("Space"); return; }
-            if (x > (movejump->x - 5) && x < (movejump->x - 5 + 10 * movejump->text.length()) && y > (movejump->y - 25) && y < (movejump->y + 5)) {
-                InputHandler::addKey("Space");
+        leftclick->callback = [&, leftclick](int x, int y, int stateMask) {
+            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("LeftMouse"); return; }
+            if (x > (leftclick->x - 5) && x < (leftclick->x - 5 + 10 * leftclick->text.length()) && y > (leftclick->y - 25) && y < (leftclick->y + 5)) {
+                InputHandler::addKey("LeftMouse");
             }
             else {
-                InputHandler::removeKey("Space");
+                InputHandler::removeKey("LeftMouse");
             }
         };
         leftclick->color = glm::vec3(1.0f, 1.0f, 1.0f);
