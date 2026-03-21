@@ -15,6 +15,7 @@ namespace Main {
     inline Shader* ourShader;
     inline Shader* fontShader;
     inline Shader* entityShader;
+    inline Shader* fxaaShader;
 
     inline VertexManager* vertexManager;
     inline TextureManager* textureManager;

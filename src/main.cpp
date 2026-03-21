@@ -154,11 +154,28 @@ bool saveLock = false;
 bool loadLock = false;
 bool raiseLock = false;
 bool lowerLock = false;
+bool fxaaLock = false;
 
 int renderDistance = 5; // 3 min
 Frustum cameraFrustum;
 
 float ambientLevel = 0.2f;
+
+int fxaaFlag = 0;
+float fquad[] = {
+    -1.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f, -1.0f,  0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+
+    -1.0f,  1.0f,  0.0f, 1.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f
+};
+GLuint fbo;
+GLuint rbo;
+GLuint ftex;
+GLuint fvao;
+GLuint fvbo;
 
 glm::vec3 colorLerp(glm::vec3 endcolor, glm::vec3 startcolor, float step) {
     return (endcolor - startcolor) * step + startcolor;
@@ -395,6 +412,15 @@ void processInput()
         if (InputHandler::isKeyPressed("KeyM")) {
             assert(true == false);
         }
+
+        if (InputHandler::isKeyPressed("KeyL") && !fxaaLock) {
+            fxaaFlag = !fxaaFlag;
+            printf("FXAA: %d\n", fxaaFlag);
+            fxaaLock = true;
+        }
+        if (InputHandler::isKeyReleased("KeyL") && fxaaLock) {
+            fxaaLock = false;
+        }
     }
 }
 
@@ -575,9 +601,44 @@ void loadAssets() {
 
 void mainLoop() {
     if (Main::serverConnected) {
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, ftex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ftex, 0);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, windowWidth, windowHeight);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+
         preRender();
 
         render();
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        Main::fxaaShader->use();
+        glUniform1i(Main::fxaaShader->uniforms["u_fxaaOn"], fxaaFlag);
+        glUniform1i(Main::fxaaShader->uniforms["u_colorTexture"], 3);
+        glUniform1i(Main::fxaaShader->uniforms["u_showEdges"], 0);
+        glUniform1f(Main::fxaaShader->uniforms["u_lumaThreshold"], 0.25f);
+        glUniform1f(Main::fxaaShader->uniforms["u_mulReduce"], 8.0f);
+        glUniform1f(Main::fxaaShader->uniforms["u_minReduce"], 128.0f);
+        glUniform1f(Main::fxaaShader->uniforms["u_maxSpan"], 8.0f);
+        glUniform2f(Main::fxaaShader->uniforms["u_texelStep"], 1.0f / (float)windowWidth, 1.0f / (float)windowHeight);
+
+        glBindVertexArray(fvao);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, ftex);
+        glBindBuffer(GL_ARRAY_BUFFER, fvbo);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     if (!Main::serverConnected) {
@@ -669,6 +730,7 @@ int main() {
     Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}, {"ambientLevel", 0}, {"chunkSampler", 0}});
     Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}, {"background", 0}, {"texindex", 0}});
     Main::entityShader = new Shader("/assets/shaders/vertentity.glsl", "/assets/shaders/fragentity.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}});
+    Main::fxaaShader = new Shader("/assets/shaders/vertFXAA.glsl", "/assets/shaders/fragFXAA.glsl", {{"u_fxaaOn", 0}, {"u_colorTexture", 0}, {"u_showEdges", 0}, {"u_lumaThreshold", 0}, {"u_mulReduce", 0}, {"u_minReduce", 0}, {"u_maxSpan", 0}, {"u_texelStep", 0}});
 
     std::vector<int> fontsizes = {20, 40};
     Main::fontManager = new FontManager();
@@ -966,6 +1028,15 @@ int main() {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
          }
     });
+
+    glGenFramebuffers(1, &fbo);
+    glGenRenderbuffers(1, &rbo);
+    glGenTextures(1, &ftex);
+    glGenVertexArrays(1, &fvao);
+    glGenBuffers(1, &fvbo);
+    glBindBuffer(GL_ARRAY_BUFFER, fvbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 4 * 6, &fquad[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glfwMakeContextCurrent(window);
     glViewport(0, 0, windowWidth, windowHeight);
