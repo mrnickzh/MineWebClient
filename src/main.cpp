@@ -391,6 +391,10 @@ void processInput()
         if (InputHandler::isKeyPressed("Digit5")) {
             selectedblock = 5;
         }
+
+        if (InputHandler::isKeyPressed("KeyM")) {
+            assert(true == false);
+        }
     }
 }
 

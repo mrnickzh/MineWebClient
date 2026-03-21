@@ -30,9 +30,16 @@
             font-size: 1.5em;
             z-index: 10;
         }
+        #logger {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: white;
+        }
     </style>
 </head>
 <body>
+<p id="logger"></p>
 <div id="preloader"><progress id="progressBar"></progress></div>
 <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
 <input type="file" id="myfile" style="display: none;" onchange="load_file()">
@@ -61,6 +68,34 @@
             document.getElementById('fakeinput').focus();
         }
     }
+
+    (function () {
+        var oldlog = console.log;
+        var olderror = console.error;
+        var oldwarn = console.warn;
+        var logger = document.getElementById('logger');
+        console.log = function (message) {
+            if (typeof message == 'object') {
+                logger.innerHTML += (JSON && JSON.stringify ? JSON.stringify(message) : message) + '<br/>';
+            } else {
+                logger.innerHTML += message + '<br/>';
+            }
+        }
+        console.error = function (message) {
+            if (typeof message == 'object') {
+                logger.innerHTML += '<span style="color: red;">' + (JSON && JSON.stringify ? JSON.stringify(message) : message) + '</span><br/>';
+            } else {
+                logger.innerHTML += '<span style="color: red;">' + message + '</span><br/>';
+            }
+        }
+        console.warn = function (message) {
+            if (typeof message == 'object') {
+                logger.innerHTML += '<span style="color: yellow;">' + (JSON && JSON.stringify ? JSON.stringify(message) : message) + '</span><br/>';
+            } else {
+                logger.innerHTML += '<span style="color: yellow;">' + message + '</span><br/>';
+            }
+        }
+    })();
 
     var Module = {
         preRun: [],

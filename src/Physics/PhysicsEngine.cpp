@@ -82,7 +82,10 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject>& obj) {
     bool ZCollision = false;
 
     std::vector<std::shared_ptr<Object>> obstacles = possibleObstacles(pos);
-    if (obstacles.size() < 36) { std::cout << obstacles.size() << std::endl; return; }
+    if (obstacles.size() < 36) {
+        // std::cout << obstacles.size() << std::endl;
+        return;
+    }
 
     float inertiaAdjusted = 0.002f * obj->mass;
     float gravityAdjusted = 0.003f * obj->mass;
