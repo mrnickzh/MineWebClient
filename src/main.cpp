@@ -620,14 +620,9 @@ void mainLoop() {
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         Main::fxaaShader->use();
-        glUniform1i(Main::fxaaShader->uniforms["u_fxaaOn"], fxaaFlag);
-        glUniform1i(Main::fxaaShader->uniforms["u_colorTexture"], 3);
-        glUniform1i(Main::fxaaShader->uniforms["u_showEdges"], 0);
-        glUniform1f(Main::fxaaShader->uniforms["u_lumaThreshold"], 0.25f);
-        glUniform1f(Main::fxaaShader->uniforms["u_mulReduce"], 8.0f);
-        glUniform1f(Main::fxaaShader->uniforms["u_minReduce"], 128.0f);
-        glUniform1f(Main::fxaaShader->uniforms["u_maxSpan"], 8.0f);
-        glUniform2f(Main::fxaaShader->uniforms["u_texelStep"], 1.0f / (float)windowWidth, 1.0f / (float)windowHeight);
+        glUniform1i(Main::fxaaShader->uniforms["uEnabled"], fxaaFlag);
+        glUniform1i(Main::fxaaShader->uniforms["uFrameTex"], 3);
+        glUniform2f(Main::fxaaShader->uniforms["uViewportSize"], (float)windowWidth, (float)windowHeight);
 
         glBindVertexArray(fvao);
         glActiveTexture(GL_TEXTURE3);
@@ -730,7 +725,7 @@ int main() {
     Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}, {"ambientLevel", 0}, {"chunkSampler", 0}});
     Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}, {"background", 0}, {"texindex", 0}});
     Main::entityShader = new Shader("/assets/shaders/vertentity.glsl", "/assets/shaders/fragentity.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}});
-    Main::fxaaShader = new Shader("/assets/shaders/vertFXAA.glsl", "/assets/shaders/fragFXAA.glsl", {{"u_fxaaOn", 0}, {"u_colorTexture", 0}, {"u_showEdges", 0}, {"u_lumaThreshold", 0}, {"u_mulReduce", 0}, {"u_minReduce", 0}, {"u_maxSpan", 0}, {"u_texelStep", 0}});
+    Main::fxaaShader = new Shader("/assets/shaders/vertFXAA.glsl", "/assets/shaders/fragFXAA.glsl", {{"uEnabled", 0}, {"uFrameTex", 0}, {"uViewportSize", 0}});
 
     std::vector<int> fontsizes = {20, 40};
     Main::fontManager = new FontManager();
