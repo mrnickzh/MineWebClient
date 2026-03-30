@@ -7,7 +7,7 @@ class PlayerAuthInput : public Packet {
 public:
     void receive(ByteBuf &buffer) override {
         std::string uuid = buffer.readString();
-        std::cout << uuid << " uuid" << std::endl;
+        // std::cout << uuid << " uuid" << std::endl;
         for (auto& e : Main::entities) {
            if (e->uuid == uuid) {
                float px = buffer.readFloat();

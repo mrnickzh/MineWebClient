@@ -265,24 +265,34 @@ void processInput()
     if (Main::serverConnected) {
         glm::vec3 rotation = Main::localPlayer->object->rotation;
         if (!ourCamera->freeCam) {
+            bool moved = false;
             float speed = (sprint ? 0.075f : 0.05f);
             glm::vec3 totalvelocity = glm::vec3(0.0f, 0.0f, 0.0f);
-            if (InputHandler::isKeyPressed("KeyW"))
+            if (InputHandler::isKeyPressed("KeyW")) {
                 totalvelocity += glm::vec3(speed, 0.0f, 0.0f);
-            if (InputHandler::isKeyPressed("KeyS"))
+                moved = true;
+            }
+            if (InputHandler::isKeyPressed("KeyS")) {
                 totalvelocity += glm::vec3(-speed, 0.0f, 0.0f);
-            if (InputHandler::isKeyPressed("KeyA"))
+                moved = true;
+            }
+            if (InputHandler::isKeyPressed("KeyA")) {
                 totalvelocity += glm::vec3(0.0f, 0.0f, -speed);
-            if (InputHandler::isKeyPressed("KeyD"))
+                moved = true;
+            }
+            if (InputHandler::isKeyPressed("KeyD")) {
                 totalvelocity += glm::vec3(0.0f, 0.0f, speed);
+                moved = true;
+            }
             Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, totalvelocity, glm::vec3((sprint ? maxH*1.5 : maxH), 0.1f, (sprint ? maxH*1.5 : maxH)));
             if (InputHandler::isKeyPressed("Space") && Main::physicsEngine->isOnFoot(Main::localPlayer->object)) {
                 Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3((sprint ? maxH*1.5 : maxH), 0.1f, (sprint ? maxH*1.5 : maxH)));
+                moved = true;
             }
-            // if (Main::physicsEngine->getVelocity(Main::localPlayer->object) != glm::vec3(0.0f, 0.0f, 0.0f)) {
-            PlayerAuthInput packet;
-            SocketClient::getInstance().sendPacket(&packet);
-            // }
+            if (true) {
+                PlayerAuthInput packet;
+                SocketClient::getInstance().sendPacket(&packet);
+            }
         }
         else {
             if (InputHandler::isKeyPressed("KeyW"))
@@ -445,6 +455,7 @@ void preRender() {
     Main::localPlayer->object->setposition(Main::localPlayer->object->position);
     Main::localPlayer->object->render();
     for (auto& entity : Main::entities) {
+        entity->object->setposition(entity->object->position);
         entity->object->render();
     }
 
@@ -684,6 +695,7 @@ int main() {
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_SAMPLES, 0);
     window = glfwCreateWindow(windowWidth, windowHeight, "MineWeb", nullptr, nullptr);
     if (!window) {
         glfwTerminate();

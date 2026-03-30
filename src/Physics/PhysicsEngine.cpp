@@ -41,7 +41,7 @@ std::vector<std::shared_ptr<Object>> PhysicsEngine::possibleObstacles(glm::vec3 
     currentChunkBlock.x += (currentChunk.x < 0.0f ? (currentChunkBlock.x == 0.0f ? 0.0f : 8.0f) : 0.0f);
     currentChunkBlock.y += (currentChunk.y < 0.0f ? (currentChunkBlock.y == 0.0f ? 0.0f : 8.0f) : 0.0f);
     currentChunkBlock.z += (currentChunk.z < 0.0f ? (currentChunkBlock.z == 0.0f ? 0.0f : 8.0f) : 0.0f);
-    // std::cout << currentChunkBlock.x << " " << currentChunkBlock.y << " " << currentChunkBlock.z << std::endl;
+    // std::cout << currentChunkBlock.x << " " << currentChunkBlock.y << " " << currentChunkBlock.z << " " << currentChunk.x << " " << currentChunk.y << " " << currentChunk.z << std::endl;
     // std::cout << "=====BEGIN=====" << std::endl;
     for (int i = (int)currentChunkBlock.x - 1; i <= (int)currentChunkBlock.x + 1; i++) {
         glm::vec3 collisionChunkX = currentChunk;

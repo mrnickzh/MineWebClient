@@ -22,7 +22,7 @@ public:
             case 0: {
                 std::shared_ptr<Entity> e = std::make_shared<Entity>();
                 e->uuid = uuidStr;
-                e->object = std::make_shared<EntityObject>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1, 49, false, glm::vec3(0.25f, 0.75f, 0.25f));
+                e->object = std::make_shared<EntityObject>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1, 49, true, glm::vec3(0.25f, 0.75f, 0.25f));
                 if (std::find_if(Main::entities.begin(), Main::entities.end(), [uuidStr](std::shared_ptr<Entity> &f)->bool{ return (*f).uuid == uuidStr; }) == Main::entities.end()) {
                     Main::entities.push_back(e);
                     Main::physicsEngine->registerObject(e->object, 1.0f);
