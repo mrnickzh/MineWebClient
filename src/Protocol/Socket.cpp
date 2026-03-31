@@ -17,7 +17,7 @@ void SocketClient::on_open() {
     }
 
     HandShakePacket pkt;
-    pkt.name = "player";
+    pkt.name = Main::localName;
     sendPacket(&pkt);
 }
 

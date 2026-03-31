@@ -201,10 +201,13 @@ bool checkPointerLock() {
 extern "C" {
     int load_world() {
         Main::serverAddress = "localhost";
+        Main::localName = "player";
         Main::serverInstance.loadWorld();
         SocketClient::getInstance().connect();
-        std::shared_ptr<Element> e = Main::menuManager->getElement("ipenter");
-        static_cast<EnterElement*>(e.get())->enteractive = false;
+        EnterElement* ipenter = static_cast<EnterElement*>(Main::menuManager->getElement("ipenter").get());
+        EnterElement* nickenter = static_cast<EnterElement*>(Main::menuManager->getElement("nickenter").get());
+        ipenter->enteractive = false;
+        nickenter->enteractive = false;
         Main::menuManager->active = false;
         Main::gameUIManager->active = true;
         Main::chatUIManager->active = true;
@@ -215,13 +218,15 @@ extern "C" {
     int input_char(int charcode) {
         if (!Main::isMobile) { return 0; }
         if (charcode > 127) { return 0; }
-        std::shared_ptr<Element> e = Main::menuManager->getElement("ipenter");
-        EnterElement* ipenter = static_cast<EnterElement*>(e.get());
+        EnterElement* ipenter = static_cast<EnterElement*>(Main::menuManager->getElement("ipenter").get());
+        EnterElement* nickenter = static_cast<EnterElement*>(Main::menuManager->getElement("nickenter").get());
         if (charcode == 8) {
             ipenter->removeChar();
+            nickenter->removeChar();
             return 0;
         }
         ipenter->addChar((char)charcode);
+        nickenter->addChar((char)charcode);
         return 0;
     }
 }
@@ -726,7 +731,6 @@ int main() {
     emscripten_set_touchstart_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, InputHandler::touchStart);
     emscripten_set_touchend_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, InputHandler::touchEnd);
 
-
     PacketHelper::registerPacket(0, []() { return new HandShakePacket(); });
     PacketHelper::registerPacket(1, []() { return new EditChunk(); });
     PacketHelper::registerPacket(2, []() { return new GenerateChunk(); });
@@ -835,33 +839,54 @@ int main() {
         verlabel->color = glm::vec3(0.5f, 0.5f, 0.5f);
         verlabel->setText("Version: dev");
         Main::menuManager->addElement(verlabel);
-        std::shared_ptr<TextElement> iplabel = std::make_shared<TextElement>("iplabel", [](int, int, int){}, 100, 160, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> nicklabel = std::make_shared<TextElement>("nicklabel", [](int, int, int){}, 100, 160, 20, Main::fontManager, false);
+        nicklabel->color = glm::vec3(0.1f, 0.1f, 0.1f);
+        nicklabel->setText("Nickname:");
+        Main::menuManager->addElement(nicklabel);
+        std::shared_ptr<EnterElement> nickenter = std::make_shared<EnterElement>("nickenter", nullptr, 100, 200, 20, Main::fontManager, 16, "", true);
+        nickenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
+        nickenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
+        Main::menuManager->addElement(nickenter);
+        std::shared_ptr<TextElement> iplabel = std::make_shared<TextElement>("iplabel", [](int, int, int){}, 100, 240, 20, Main::fontManager, false);
         iplabel->color = glm::vec3(0.1f, 0.1f, 0.1f);
         iplabel->setText("Server IP:");
         Main::menuManager->addElement(iplabel);
-        std::shared_ptr<EnterElement> ipenter = std::make_shared<EnterElement>("ipenter", nullptr, 100, 200, 20, Main::fontManager, 64, "", true);
-        ipenter->callback = [&, ipenter](int x, int y, int stateMask) {
+        std::shared_ptr<EnterElement> ipenter = std::make_shared<EnterElement>("ipenter", nullptr, 100, 280, 20, Main::fontManager, 64, "", true);
+        ipenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
+        ipenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
+        Main::menuManager->addElement(ipenter);
+        nickenter->callback = [&, nickenter, ipenter](int x, int y, int stateMask) {
             if (stateMask != (LEFT_CLICK)) { return; }
-            if (ipenter == nullptr) { printf("nullptr\b"); }
+            if (x > (nickenter->x - 5) && x < (nickenter->x + 10 * nickenter->maxlen) && y > (nickenter->y - 25) && y < (nickenter->y + 5)) {
+                nickenter->enteractive = true;
+                if (Main::isMobile) { emscripten_run_script("callKeyboard(false)"); }
+            }
+            else {
+                nickenter->enteractive = false;
+                if (Main::isMobile && !(x > (ipenter->x - 5) && x < (ipenter->x + 10 * ipenter->maxlen) && y > (ipenter->y - 25) && y < (ipenter->y + 5))) { emscripten_run_script("callKeyboard(true)"); }
+            }
+        };
+        ipenter->callback = [&, ipenter, nickenter](int x, int y, int stateMask) {
+            if (stateMask != (LEFT_CLICK)) { return; }
             if (x > (ipenter->x - 5) && x < (ipenter->x + 10 * ipenter->maxlen) && y > (ipenter->y - 25) && y < (ipenter->y + 5)) {
                 ipenter->enteractive = true;
                 if (Main::isMobile) { emscripten_run_script("callKeyboard(false)"); }
             }
             else {
                 ipenter->enteractive = false;
-                if (Main::isMobile) { emscripten_run_script("callKeyboard(true)"); }
+                if (Main::isMobile && !(x > (nickenter->x - 5) && x < (nickenter->x + 10 * nickenter->maxlen) && y > (nickenter->y - 25) && y < (nickenter->y + 5))) { emscripten_run_script("callKeyboard(true)"); }
             }
         };
-        ipenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
-        ipenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
-        Main::menuManager->addElement(ipenter);
-        std::shared_ptr<TextElement> joinbutton = std::make_shared<TextElement>("joinbutton", nullptr, 100, 240, 20, Main::fontManager, true);
-        joinbutton->callback = [&, joinbutton, ipenter](int x, int y, int stateMask) {
+        std::shared_ptr<TextElement> joinbutton = std::make_shared<TextElement>("joinbutton", nullptr, 100, 320, 20, Main::fontManager, true);
+        joinbutton->callback = [&, joinbutton, ipenter, nickenter](int x, int y, int stateMask) {
             if (stateMask != (LEFT_CLICK)) { return; }
             if (x > (joinbutton->x - 5) && x < (joinbutton->x - 5 + 10 * joinbutton->text.length()) && y > (joinbutton->y - 25) && y < (joinbutton->y + 5)) {
                 Main::serverAddress = ipenter->text;
+                if (nickenter->text.empty()) { srand(time(NULL)); Main::localName = "player" + std::to_string(1000 + rand() % (9999 - 1000 + 1)); }
+                else { Main::localName = nickenter->text; }
                 SocketClient::getInstance().connect();
                 ipenter->enteractive = false;
+                nickenter->enteractive = false;
                 Main::menuManager->active = false;
                 Main::gameUIManager->active = true;
                 Main::chatUIManager->active = true;
@@ -872,13 +897,15 @@ int main() {
         joinbutton->bcolor = glm::vec3(1.0f, 0.5f, 0.5f);
         joinbutton->setText("Join Server");
         Main::menuManager->addElement(joinbutton);
-        std::shared_ptr<TextElement> localbutton = std::make_shared<TextElement>("localbutton", nullptr, 100, 320, 20, Main::fontManager, true);
-        localbutton->callback = [&, localbutton, ipenter](int x, int y, int stateMask) {
+        std::shared_ptr<TextElement> localbutton = std::make_shared<TextElement>("localbutton", nullptr, 100, 420, 20, Main::fontManager, true);
+        localbutton->callback = [&, localbutton, ipenter, nickenter](int x, int y, int stateMask) {
             if (stateMask != (LEFT_CLICK)) { return; }
             if (x > (localbutton->x - 5) && x < (localbutton->x - 5 + 10 * localbutton->text.length()) && y > (localbutton->y - 25) && y < (localbutton->y + 5)) {
                 Main::serverAddress = "localhost";
+                Main::localName = "player";
                 SocketClient::getInstance().connect();
                 ipenter->enteractive = false;
+                nickenter->enteractive = false;
                 Main::menuManager->active = false;
                 Main::gameUIManager->active = true;
                 Main::chatUIManager->active = true;
@@ -889,7 +916,7 @@ int main() {
         localbutton->bcolor = glm::vec3(0.5f, 1.0f, 0.5f);
         localbutton->setText("Play Offline");
         Main::menuManager->addElement(localbutton);
-        std::shared_ptr<TextElement> importbutton = std::make_shared<TextElement>("importbutton", nullptr, 100, 360, 20, Main::fontManager, true);
+        std::shared_ptr<TextElement> importbutton = std::make_shared<TextElement>("importbutton", nullptr, 100, 480, 20, Main::fontManager, true);
         importbutton->callback = [&, importbutton](int x, int y, int stateMask) {
             if (stateMask != (LEFT_CLICK)) { loadLock = false; return; }
             if (x > (importbutton->x - 5) && x < (importbutton->x - 5 + 10 * importbutton->text.length()) && y > (importbutton->y - 25) && y < (importbutton->y + 5) && !loadLock) {
@@ -1034,10 +1061,25 @@ int main() {
                 ipenter->addChar((char)keycode);
             }
 
+            EnterElement* nickenter = static_cast<EnterElement*>(Main::menuManager->getElement("nickenter").get());
+
+            if (nickenter->enteractive) {
+                if (event->key == "Backspace") {
+                    nickenter->removeChar();
+                    return;
+                }
+
+                std::cout << strlen(event->code) << std::endl;
+                if (strlen(event->code) > 1) { return; }
+
+                int keycode = (int)*(event->code);
+                nickenter->addChar((char)keycode);
+            }
+
             EnterElement* chatenter = static_cast<EnterElement*>(Main::chatUIManager->getElement("chatenter").get());
 
             if (chatenter->active) {
-                if (event->key == "Enter") {
+                if (event->key == "Enter" && !(chatenter->text.empty())) {
                     ChatMessage packet;
                     packet.message = chatenter->text;
                     SocketClient::getInstance().sendPacket(&packet);

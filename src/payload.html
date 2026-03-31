@@ -53,6 +53,7 @@
         if (document.getElementById('fakeinput').value.length < inputSize) {
             inputSize = document.getElementById('fakeinput').value.length;
             Module.ccall('input_char', 'number', ['number'], [8]);
+            document.getElementById('fakeinput').value.append("0")
         }
         else if (document.getElementById('fakeinput').value.length > inputSize) {
             inputSize = document.getElementById('fakeinput').value.length;

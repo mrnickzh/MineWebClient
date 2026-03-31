@@ -36,7 +36,7 @@ void EnterElement::addChar(const char chr) {
 }
 
 void EnterElement::removeChar() {
-    if (!text.empty()) {
+    if (!text.empty() && enteractive) {
         text.pop_back();
         count = fontManager->genGlyphs(text, x, y, fontsize, vao, vbo, uv);
     }

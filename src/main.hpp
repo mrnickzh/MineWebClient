@@ -35,6 +35,7 @@ namespace Main {
     inline bool serverConnected = false;
     inline Server& serverInstance = Server::getInstance();
     inline std::string serverAddress = "localhost";
+    inline std::string localName = "player";
 
     inline std::shared_ptr<Entity> localPlayer;
     inline std::vector<std::shared_ptr<Entity>> entities;
