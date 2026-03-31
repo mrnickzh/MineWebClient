@@ -35,6 +35,7 @@
 #include "Protocol/Packets/PlayerAuthInput.hpp"
 #include "Utils/VertexManager.hpp"
 #include "../lib/json/json.hpp"
+#include "Protocol/Packets/ChatMessage.hpp"
 #include "Protocol/Packets/LightMap.hpp"
 
 float vertices[] = {
@@ -155,6 +156,7 @@ bool loadLock = false;
 bool raiseLock = false;
 bool lowerLock = false;
 bool fxaaLock = false;
+bool chatLock = false;
 
 int renderDistance = 5; // 3 min
 Frustum cameraFrustum;
@@ -202,9 +204,10 @@ extern "C" {
         Main::serverInstance.loadWorld();
         SocketClient::getInstance().connect();
         std::shared_ptr<Element> e = Main::menuManager->getElement("ipenter");
-        dynamic_cast<EnterElement*>(e.get())->enteractive = false;
+        static_cast<EnterElement*>(e.get())->enteractive = false;
         Main::menuManager->active = false;
         Main::gameUIManager->active = true;
+        Main::chatUIManager->active = true;
         if (Main::isMobile) { Main::touchManager->active = true; }
         return 0;
     }
@@ -213,7 +216,7 @@ extern "C" {
         if (!Main::isMobile) { return 0; }
         if (charcode > 127) { return 0; }
         std::shared_ptr<Element> e = Main::menuManager->getElement("ipenter");
-        EnterElement* ipenter = dynamic_cast<EnterElement*>(e.get());
+        EnterElement* ipenter = static_cast<EnterElement*>(e.get());
         if (charcode == 8) {
             ipenter->removeChar();
             return 0;
@@ -255,7 +258,7 @@ EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     mvr->setPosition((windowWidth/18)*4, (windowHeight/18)*14);
 
     // std::shared_ptr<Element> lmb = Main::menuManager->getElement("leftclick");
-    // dynamic_cast<TextElement*>(vl.get())->setPosition((windowWidth/2)-60, dynamic_cast<TextElement*>(vl.get())->y);
+    // static_cast<TextElement*>(vl.get())->setPosition((windowWidth/2)-60, static_cast<TextElement*>(vl.get())->y);
 
     return EM_TRUE;
 }
@@ -263,6 +266,8 @@ EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
 void processInput()
 {
     if (Main::serverConnected) {
+        if (Main::chatUIManager->getElement("chatenter")->active) { return; }
+
         glm::vec3 rotation = Main::localPlayer->object->rotation;
         if (!ourCamera->freeCam) {
             bool moved = false;
@@ -289,7 +294,7 @@ void processInput()
                 Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3((sprint ? maxH*1.5 : maxH), 0.1f, (sprint ? maxH*1.5 : maxH)));
                 moved = true;
             }
-            if (true) {
+            if (moved) {
                 PlayerAuthInput packet;
                 SocketClient::getInstance().sendPacket(&packet);
             }
@@ -431,6 +436,14 @@ void processInput()
         if (InputHandler::isKeyReleased("KeyL") && fxaaLock) {
             fxaaLock = false;
         }
+
+        if (InputHandler::isKeyPressed("KeyT") && !chatLock) {
+            Main::chatUIManager->getElement("chatenter")->active = true;
+            chatLock = true;
+        }
+        if (InputHandler::isKeyReleased("KeyT") && chatLock) {
+            chatLock = false;
+        }
     }
 }
 
@@ -473,7 +486,7 @@ void render() {
 
     std::string coordsstr = "x: " + std::to_string(playerPos.x) + " y: " + std::to_string(playerPos.y) + " z: " + std::to_string(playerPos.z) + " cx: " + std::to_string((int)playerChunk.x) + " cy: " + std::to_string((int)playerChunk.y) + " cz: " + std::to_string((int)playerChunk.z) + " blk: " + std::to_string(selectedblock) + " mem: " + std::to_string(emscripten_get_heap_size());
     std::shared_ptr<Element> e = Main::gameUIManager->getElement("coords");
-    dynamic_cast<TextElement*>(e.get())->setText(coordsstr);
+    static_cast<TextElement*>(e.get())->setText(coordsstr);
 
     if (!ourCamera->freeCam) {
         cameraFrustum = ourCamera->createFrustumFromCamera(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
@@ -565,6 +578,7 @@ void postRender() {
     Main::menuManager->render();
     Main::gameUIManager->render();
     Main::touchManager->render();
+    Main::chatUIManager->render();
 
     int stateMask = 0x0000;
 
@@ -582,6 +596,7 @@ void postRender() {
     Main::menuManager->poll(Main::mouseX, Main::mouseY, stateMask);
     Main::gameUIManager->poll(Main::mouseX, Main::mouseY, stateMask);
     Main::touchManager->poll(Main::mouseX, Main::mouseY, stateMask);
+    Main::chatUIManager->poll(Main::mouseX, Main::mouseY, stateMask);
 
     std::shared_ptr<Element> e = Main::gameUIManager->getElement("crosshair");
     e->setPosition(windowWidth/2-10, windowHeight/2-10);
@@ -665,8 +680,8 @@ void mainLoop() {
     if ((float)glfwGetTime() > lastCounter + 1.0f) {
         int fps = (int)std::round(1.0f / deltaTime);
         std::shared_ptr<Element> e = Main::gameUIManager->getElement("fpscounter");
-        dynamic_cast<TextElement*>(e.get())->setText("FPS: " + std::to_string(fps));
-        dynamic_cast<TextElement*>(e.get())->color = glm::vec3(std::max(1.0f - ((float)fps / 255.0f), 0.0f), 0.0f, 0.0f);
+        static_cast<TextElement*>(e.get())->setText("FPS: " + std::to_string(fps));
+        static_cast<TextElement*>(e.get())->color = glm::vec3(std::max(1.0f - ((float)fps / 255.0f), 0.0f), 0.0f, 0.0f);
         lastCounter = (float)glfwGetTime();
     }
 
@@ -718,6 +733,7 @@ int main() {
     PacketHelper::registerPacket(3, []() { return new EntityAction(); });
     PacketHelper::registerPacket(4, []() { return new PlayerAuthInput(); });
     PacketHelper::registerPacket(5, []() { return new LightMap(); });
+    PacketHelper::registerPacket(6, []() { return new ChatMessage(); });
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
@@ -776,6 +792,23 @@ int main() {
     });
 
     {
+        Main::chatUIManager = new GUIManager();
+        Main::chatUIManager->active = false;
+        std::shared_ptr<EnterElement> chatenter = std::make_shared<EnterElement>("chatenter", [](int, int, int){}, 20, 500, 20, Main::fontManager, 128, "", true);
+        chatenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
+        chatenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
+        chatenter->active = false;
+        chatenter->enteractive = true;
+        Main::chatUIManager->addElement(chatenter);
+        for (int i = 0; i < 5; i++){
+            std::shared_ptr<TextElement> chatrow = std::make_shared<TextElement>("chatrow" + std::to_string(i), [](int, int, int){}, 20, 450 - (i * 25), 20, Main::fontManager, false);
+            chatrow->color = glm::vec3(1.0f, 1.0f, 1.0f);
+            chatrow->setText("");
+            Main::chatUIManager->addElement(chatrow);
+        }
+    }
+
+    {
         Main::gameUIManager = new GUIManager();
         Main::gameUIManager->active = false;
         std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int, int, int){}, 0, 20, 20, Main::fontManager, false);
@@ -831,6 +864,7 @@ int main() {
                 ipenter->enteractive = false;
                 Main::menuManager->active = false;
                 Main::gameUIManager->active = true;
+                Main::chatUIManager->active = true;
                 if (Main::isMobile) { Main::touchManager->active = true; }
             }
         };
@@ -847,6 +881,7 @@ int main() {
                 ipenter->enteractive = false;
                 Main::menuManager->active = false;
                 Main::gameUIManager->active = true;
+                Main::chatUIManager->active = true;
                 if (Main::isMobile) { Main::touchManager->active = true; }
             }
         };
@@ -983,19 +1018,46 @@ int main() {
     }
 
     L_SUBSCRIBE(KeyEvent, [](KeyEvent* event) {
-        if (event->state && !Main::serverConnected && !Main::isMobile) {
-            std::shared_ptr<Element> e = Main::menuManager->getElement("ipenter");
+        if (event->state && !Main::isMobile) {
+            EnterElement* ipenter = static_cast<EnterElement*>(Main::menuManager->getElement("ipenter").get());
 
-            if (event->key == "Backspace") {
-                dynamic_cast<EnterElement*>(e.get())->removeChar();
-                return;
+            if (ipenter->enteractive) {
+                if (event->key == "Backspace") {
+                    ipenter->removeChar();
+                    return;
+                }
+
+                std::cout << strlen(event->code) << std::endl;
+                if (strlen(event->code) > 1) { return; }
+
+                int keycode = (int)*(event->code);
+                ipenter->addChar((char)keycode);
             }
 
-            if (strlen(event->code) > 1) { return; }
+            EnterElement* chatenter = static_cast<EnterElement*>(Main::chatUIManager->getElement("chatenter").get());
 
-            int keycode = (int)*(event->code);
-            std::cout << strlen(event->code) << std::endl;
-            dynamic_cast<EnterElement*>(e.get())->addChar((char)keycode);
+            if (chatenter->active) {
+                if (event->key == "Enter") {
+                    ChatMessage packet;
+                    packet.message = chatenter->text;
+                    SocketClient::getInstance().sendPacket(&packet);
+
+                    chatenter->text = "0";
+                    chatenter->removeChar();
+                    chatenter->active = false;
+                    return;
+                }
+                if (event->key == "Backspace") {
+                    chatenter->removeChar();
+                    return;
+                }
+
+                std::cout << strlen(event->code) << std::endl;
+                if (strlen(event->code) > 1) { return; }
+
+                int keycode = (int)*(event->code);
+                chatenter->addChar((char)keycode);
+            }
         }
     });
 

@@ -24,6 +24,7 @@ namespace Main {
     inline GUIManager* menuManager;
     inline GUIManager* gameUIManager;
     inline GUIManager* touchManager;
+    inline GUIManager* chatUIManager;
 
     inline std::map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Comparator> chunks;
     inline std::set<glm::vec3, vec3Comparator> requestedChunks;
@@ -37,6 +38,8 @@ namespace Main {
 
     inline std::shared_ptr<Entity> localPlayer;
     inline std::vector<std::shared_ptr<Entity>> entities;
+
+    inline std::deque<std::string> chatMessages = {"", "", "", "", ""};
 
     inline int mouseX = 0;
     inline int mouseY = 0;

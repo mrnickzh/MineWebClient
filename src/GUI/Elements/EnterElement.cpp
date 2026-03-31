@@ -28,7 +28,7 @@ void EnterElement::render() {
 }
 
 void EnterElement::addChar(const char chr) {
-    if (chr > ' ' && chr < '~' && enteractive) {
+    if (chr > (' ' - 1) && chr < '~' && enteractive) {
         if ((text + chr).length() > maxlen) { return; }
         text += chr;
         count = fontManager->genGlyphs(text, x, y, fontsize, vao, vbo, uv);
