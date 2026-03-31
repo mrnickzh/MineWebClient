@@ -37,6 +37,7 @@
 #include "../lib/json/json.hpp"
 #include "Protocol/Packets/ChatMessage.hpp"
 #include "Protocol/Packets/LightMap.hpp"
+#include "Protocol/Packets/NetworkSettingsPacket.hpp"
 
 float vertices[] = {
     // Back face
@@ -268,186 +269,187 @@ EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     return EM_TRUE;
 }
 
-void processInput()
-{
+void processInput() {
     if (Main::serverConnected) {
         if (Main::chatUIManager->getElement("chatenter")->active) { return; }
 
-        glm::vec3 rotation = Main::localPlayer->object->rotation;
-        if (!ourCamera->freeCam) {
-            bool moved = false;
-            float speed = (sprint ? 0.075f : 0.05f);
-            glm::vec3 totalvelocity = glm::vec3(0.0f, 0.0f, 0.0f);
-            if (InputHandler::isKeyPressed("KeyW")) {
-                totalvelocity += glm::vec3(speed, 0.0f, 0.0f);
-                moved = true;
-            }
-            if (InputHandler::isKeyPressed("KeyS")) {
-                totalvelocity += glm::vec3(-speed, 0.0f, 0.0f);
-                moved = true;
-            }
-            if (InputHandler::isKeyPressed("KeyA")) {
-                totalvelocity += glm::vec3(0.0f, 0.0f, -speed);
-                moved = true;
-            }
-            if (InputHandler::isKeyPressed("KeyD")) {
-                totalvelocity += glm::vec3(0.0f, 0.0f, speed);
-                moved = true;
-            }
-            Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, totalvelocity, glm::vec3((sprint ? maxH*1.5 : maxH), 0.1f, (sprint ? maxH*1.5 : maxH)));
-            if (InputHandler::isKeyPressed("Space") && Main::physicsEngine->isOnFoot(Main::localPlayer->object)) {
-                Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3((sprint ? maxH*1.5 : maxH), 0.1f, (sprint ? maxH*1.5 : maxH)));
-                moved = true;
-            }
-            if (moved) {
-                PlayerAuthInput packet;
-                SocketClient::getInstance().sendPacket(&packet);
-            }
-        }
-        else {
-            if (InputHandler::isKeyPressed("KeyW"))
-                ourCamera->Position += glm::vec3(5.0f * deltaTime, 0.0f, 5.0f * deltaTime) * ourCamera->Front;
-            if (InputHandler::isKeyPressed("KeyS"))
-                ourCamera->Position += glm::vec3(-5.0f * deltaTime, 0.0f, -5.0f * deltaTime) * ourCamera->Front;
-            if (InputHandler::isKeyPressed("KeyA"))
-                ourCamera->Position += glm::vec3(-5.0f * deltaTime, 0.0f, -5.0f * deltaTime) * ourCamera->Right;
-            if (InputHandler::isKeyPressed("KeyD"))
-                ourCamera->Position += glm::vec3(5.0f * deltaTime, 0.0f, 5.0f * deltaTime) * ourCamera->Right;
-            if (InputHandler::isKeyPressed("Space"))
-                ourCamera->Position += glm::vec3(0.0f, 5.0f * deltaTime, 0.0f) * ourCamera->Up;
-            if (InputHandler::isKeyPressed("ShiftLeft"))
-                ourCamera->Position += glm::vec3(0.0f, -5.0f * deltaTime, 0.0f) * ourCamera->Up;
-        }
-
-        if (InputHandler::isMousePressed(MOUSE_LEFT) && Main::serverConnected) {
-            emscripten_request_pointerlock("canvas", EM_TRUE);
-        }
-
-        if (InputHandler::isKeyPressed("KeyC") && !freeCamLock) {
-            ourCamera->freeCam = !ourCamera->freeCam;
-            ourCamera->Yaw = rotation.y;
-            freeCamLock = true;
-        }
-        if (InputHandler::isKeyReleased("KeyC") && freeCamLock) {
-            freeCamLock = false;
-        }
-
-        if (InputHandler::isKeyPressed("KeyY") && !raiseLock) {
-            ambientLevel = std::min(ambientLevel + 0.2f, 1.0f);
-            raiseLock = true;
-        }
-        if (InputHandler::isKeyReleased("KeyY") && raiseLock) {
-            raiseLock = false;
-        }
-
-        if (InputHandler::isKeyPressed("KeyH") && !lowerLock) {
-            ambientLevel = std::max(ambientLevel - 0.2f, 0.0f);
-            lowerLock = true;
-        }
-        if (InputHandler::isKeyReleased("KeyH") && lowerLock) {
-            lowerLock = false;
-        }
-
-        if (((InputHandler::isMousePressed(MOUSE_LEFT) && checkPointerLock() && !Main::isMobile) || (InputHandler::isKeyPressed("LeftMouse") && Main::isMobile)) && !breakLock) {
-            glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
-            glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
-            RaycastResult obj = Main::physicsEngine->raycast(3.0f, p, r);
-            if (obj.hit) {
-                // std::shared_ptr<AirObject> air = std::make_shared<AirObject>(obj.object->position, obj.object->rotation);
-                // Main::chunks[obj.chunkpos]->addBlock(obj.blockpos, air);
-                // Main::chunks[obj.chunkpos]->initTranslations();
-                EditChunk packet;
-                packet.chunkpos = obj.chunkpos;
-                packet.blockpos = obj.blockpos;
-                packet.id = 0;
-                SocketClient::getInstance().sendPacket(&packet);
-            }
-            else { std::cout << "nothing" << std::endl; }
-
-            breakLock = true;
-        }
-        if (((InputHandler::isMouseReleased(MOUSE_LEFT) && !Main::isMobile) || (InputHandler::isKeyReleased("LeftMouse") && Main::isMobile)) && breakLock) {
-            breakLock = false;
-        }
-
-        if (((InputHandler::isMousePressed(MOUSE_RIGHT) && checkPointerLock() && !Main::isMobile) || (InputHandler::isKeyPressed("RightMouse") && Main::isMobile)) && !placeLock) {
-            glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
-            glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
-            RaycastResult obj = Main::physicsEngine->raycast(4.0f, p, r);
-            if (obj.hit) {
-                if (!Main::physicsEngine->possibleCollision(obj.prevobject->position, glm::vec3(0.5f, 0.5f, 0.5f), Main::localPlayer->object)) {
-                    std::shared_ptr<LightObject> wood = std::make_shared<LightObject>(obj.prevobject->position, obj.prevobject->rotation, 0, 5, true, glm::vec3(0.5f, 0.5f, 0.5f), 10);
-                    // std::cout << obj.prevchunkpos.x << " " << obj.prevchunkpos.y << " " << obj.prevchunkpos.z << std::endl;
-                    // std::cout << obj.prevblockpos.x << " " << obj.prevblockpos.y << " " << obj.prevblockpos.z << std::endl;
-                    // Main::chunks[obj.prevchunkpos]->addBlock(obj.prevblockpos, wood);
-                    // Main::chunks[obj.prevchunkpos]->initTranslations();
-                    EditChunk packet;
-                    packet.chunkpos = obj.prevchunkpos;
-                    packet.blockpos = obj.prevblockpos;
-                    packet.id = selectedblock;
+        if (Main::serverConnected && SocketClient::getInstance().connectionState == PLAY) {
+            glm::vec3 rotation = Main::localPlayer->object->rotation;
+            if (!ourCamera->freeCam) {
+                bool moved = false;
+                float speed = (sprint ? 0.075f : 0.05f);
+                glm::vec3 totalvelocity = glm::vec3(0.0f, 0.0f, 0.0f);
+                if (InputHandler::isKeyPressed("KeyW")) {
+                    totalvelocity += glm::vec3(speed, 0.0f, 0.0f);
+                    moved = true;
+                }
+                if (InputHandler::isKeyPressed("KeyS")) {
+                    totalvelocity += glm::vec3(-speed, 0.0f, 0.0f);
+                    moved = true;
+                }
+                if (InputHandler::isKeyPressed("KeyA")) {
+                    totalvelocity += glm::vec3(0.0f, 0.0f, -speed);
+                    moved = true;
+                }
+                if (InputHandler::isKeyPressed("KeyD")) {
+                    totalvelocity += glm::vec3(0.0f, 0.0f, speed);
+                    moved = true;
+                }
+                Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, totalvelocity, glm::vec3((sprint ? maxH*1.5 : maxH), 0.1f, (sprint ? maxH*1.5 : maxH)));
+                if (InputHandler::isKeyPressed("Space") && Main::physicsEngine->isOnFoot(Main::localPlayer->object)) {
+                    Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3((sprint ? maxH*1.5 : maxH), 0.1f, (sprint ? maxH*1.5 : maxH)));
+                    moved = true;
+                }
+                if (moved) {
+                    PlayerAuthInput packet;
                     SocketClient::getInstance().sendPacket(&packet);
                 }
-                else { std::cout << "blocked" << std::endl; }
             }
-            else { std::cout << "nothing" << std::endl; }
+            else {
+                if (InputHandler::isKeyPressed("KeyW"))
+                    ourCamera->Position += glm::vec3(5.0f * deltaTime, 0.0f, 5.0f * deltaTime) * ourCamera->Front;
+                if (InputHandler::isKeyPressed("KeyS"))
+                    ourCamera->Position += glm::vec3(-5.0f * deltaTime, 0.0f, -5.0f * deltaTime) * ourCamera->Front;
+                if (InputHandler::isKeyPressed("KeyA"))
+                    ourCamera->Position += glm::vec3(-5.0f * deltaTime, 0.0f, -5.0f * deltaTime) * ourCamera->Right;
+                if (InputHandler::isKeyPressed("KeyD"))
+                    ourCamera->Position += glm::vec3(5.0f * deltaTime, 0.0f, 5.0f * deltaTime) * ourCamera->Right;
+                if (InputHandler::isKeyPressed("Space"))
+                    ourCamera->Position += glm::vec3(0.0f, 5.0f * deltaTime, 0.0f) * ourCamera->Up;
+                if (InputHandler::isKeyPressed("ShiftLeft"))
+                    ourCamera->Position += glm::vec3(0.0f, -5.0f * deltaTime, 0.0f) * ourCamera->Up;
+            }
 
-            placeLock = true;
-        }
-        if (((InputHandler::isMouseReleased(MOUSE_RIGHT) && !Main::isMobile) || (InputHandler::isKeyReleased("RightMouse") && Main::isMobile)) && placeLock) {
-            placeLock = false;
-        }
+            if (InputHandler::isMousePressed(MOUSE_LEFT) && Main::serverConnected) {
+                emscripten_request_pointerlock("canvas", EM_TRUE);
+            }
 
-        if (InputHandler::isKeyPressed("KeyP") && !saveLock && Main::isSingleplayer) {
-            Main::serverInstance.saveWorld();
-            emscripten_run_script("saveFileFromMemoryFSToDisk('/world.mww','world.mww')");
-            saveLock = true;
-        }
-        if (InputHandler::isKeyReleased("KeyP") && saveLock) {
-            saveLock = false;
-        }
+            if (InputHandler::isKeyPressed("KeyC") && !freeCamLock) {
+                ourCamera->freeCam = !ourCamera->freeCam;
+                ourCamera->Yaw = rotation.y;
+                freeCamLock = true;
+            }
+            if (InputHandler::isKeyReleased("KeyC") && freeCamLock) {
+                freeCamLock = false;
+            }
 
-        if (InputHandler::isKeyPressed("ShiftLeft")) {
-            sprint = true;
-        }
-        if (InputHandler::isKeyReleased("ShiftLeft")) {
-            sprint = false;
-        }
+            if (InputHandler::isKeyPressed("KeyY") && !raiseLock) {
+                ambientLevel = std::min(ambientLevel + 0.2f, 1.0f);
+                raiseLock = true;
+            }
+            if (InputHandler::isKeyReleased("KeyY") && raiseLock) {
+                raiseLock = false;
+            }
 
-        if (InputHandler::isKeyPressed("Digit1")) {
-            selectedblock = 1;
-        }
-        if (InputHandler::isKeyPressed("Digit2")) {
-            selectedblock = 2;
-        }
-        if (InputHandler::isKeyPressed("Digit3")) {
-            selectedblock = 3;
-        }
-        if (InputHandler::isKeyPressed("Digit4")) {
-            selectedblock = 4;
-        }
-        if (InputHandler::isKeyPressed("Digit5")) {
-            selectedblock = 5;
-        }
+            if (InputHandler::isKeyPressed("KeyH") && !lowerLock) {
+                ambientLevel = std::max(ambientLevel - 0.2f, 0.0f);
+                lowerLock = true;
+            }
+            if (InputHandler::isKeyReleased("KeyH") && lowerLock) {
+                lowerLock = false;
+            }
 
-        if (InputHandler::isKeyPressed("KeyM")) {
-            assert(true == false);
-        }
+            if (((InputHandler::isMousePressed(MOUSE_LEFT) && checkPointerLock() && !Main::isMobile) || (InputHandler::isKeyPressed("LeftMouse") && Main::isMobile)) && !breakLock) {
+                glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
+                glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
+                RaycastResult obj = Main::physicsEngine->raycast(3.0f, p, r);
+                if (obj.hit) {
+                    // std::shared_ptr<AirObject> air = std::make_shared<AirObject>(obj.object->position, obj.object->rotation);
+                    // Main::chunks[obj.chunkpos]->addBlock(obj.blockpos, air);
+                    // Main::chunks[obj.chunkpos]->initTranslations();
+                    EditChunk packet;
+                    packet.chunkpos = obj.chunkpos;
+                    packet.blockpos = obj.blockpos;
+                    packet.id = 0;
+                    SocketClient::getInstance().sendPacket(&packet);
+                }
+                else { std::cout << "nothing" << std::endl; }
 
-        if (InputHandler::isKeyPressed("KeyL") && !fxaaLock) {
-            fxaaFlag = !fxaaFlag;
-            printf("FXAA: %d\n", fxaaFlag);
-            fxaaLock = true;
-        }
-        if (InputHandler::isKeyReleased("KeyL") && fxaaLock) {
-            fxaaLock = false;
-        }
+                breakLock = true;
+            }
+            if (((InputHandler::isMouseReleased(MOUSE_LEFT) && !Main::isMobile) || (InputHandler::isKeyReleased("LeftMouse") && Main::isMobile)) && breakLock) {
+                breakLock = false;
+            }
 
-        if (InputHandler::isKeyPressed("KeyT") && !chatLock) {
-            Main::chatUIManager->getElement("chatenter")->active = true;
-            chatLock = true;
-        }
-        if (InputHandler::isKeyReleased("KeyT") && chatLock) {
-            chatLock = false;
+            if (((InputHandler::isMousePressed(MOUSE_RIGHT) && checkPointerLock() && !Main::isMobile) || (InputHandler::isKeyPressed("RightMouse") && Main::isMobile)) && !placeLock) {
+                glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
+                glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
+                RaycastResult obj = Main::physicsEngine->raycast(4.0f, p, r);
+                if (obj.hit) {
+                    if (!Main::physicsEngine->possibleCollision(obj.prevobject->position, glm::vec3(0.5f, 0.5f, 0.5f), Main::localPlayer->object)) {
+                        std::shared_ptr<LightObject> wood = std::make_shared<LightObject>(obj.prevobject->position, obj.prevobject->rotation, 0, 5, true, glm::vec3(0.5f, 0.5f, 0.5f), 10);
+                        // std::cout << obj.prevchunkpos.x << " " << obj.prevchunkpos.y << " " << obj.prevchunkpos.z << std::endl;
+                        // std::cout << obj.prevblockpos.x << " " << obj.prevblockpos.y << " " << obj.prevblockpos.z << std::endl;
+                        // Main::chunks[obj.prevchunkpos]->addBlock(obj.prevblockpos, wood);
+                        // Main::chunks[obj.prevchunkpos]->initTranslations();
+                        EditChunk packet;
+                        packet.chunkpos = obj.prevchunkpos;
+                        packet.blockpos = obj.prevblockpos;
+                        packet.id = selectedblock;
+                        SocketClient::getInstance().sendPacket(&packet);
+                    }
+                    else { std::cout << "blocked" << std::endl; }
+                }
+                else { std::cout << "nothing" << std::endl; }
+
+                placeLock = true;
+            }
+            if (((InputHandler::isMouseReleased(MOUSE_RIGHT) && !Main::isMobile) || (InputHandler::isKeyReleased("RightMouse") && Main::isMobile)) && placeLock) {
+                placeLock = false;
+            }
+
+            if (InputHandler::isKeyPressed("KeyP") && !saveLock && Main::isSingleplayer) {
+                Main::serverInstance.saveWorld();
+                emscripten_run_script("saveFileFromMemoryFSToDisk('/world.mww','world.mww')");
+                saveLock = true;
+            }
+            if (InputHandler::isKeyReleased("KeyP") && saveLock) {
+                saveLock = false;
+            }
+
+            if (InputHandler::isKeyPressed("ShiftLeft")) {
+                sprint = true;
+            }
+            if (InputHandler::isKeyReleased("ShiftLeft")) {
+                sprint = false;
+            }
+
+            if (InputHandler::isKeyPressed("Digit1")) {
+                selectedblock = 1;
+            }
+            if (InputHandler::isKeyPressed("Digit2")) {
+                selectedblock = 2;
+            }
+            if (InputHandler::isKeyPressed("Digit3")) {
+                selectedblock = 3;
+            }
+            if (InputHandler::isKeyPressed("Digit4")) {
+                selectedblock = 4;
+            }
+            if (InputHandler::isKeyPressed("Digit5")) {
+                selectedblock = 5;
+            }
+
+            if (InputHandler::isKeyPressed("KeyM")) {
+                assert(true == false);
+            }
+
+            if (InputHandler::isKeyPressed("KeyL") && !fxaaLock) {
+                fxaaFlag = !fxaaFlag;
+                printf("FXAA: %d\n", fxaaFlag);
+                fxaaLock = true;
+            }
+            if (InputHandler::isKeyReleased("KeyL") && fxaaLock) {
+                fxaaLock = false;
+            }
+
+            if (InputHandler::isKeyPressed("KeyT") && !chatLock) {
+                Main::chatUIManager->getElement("chatenter")->active = true;
+                chatLock = true;
+            }
+            if (InputHandler::isKeyReleased("KeyT") && chatLock) {
+                chatLock = false;
+            }
         }
     }
 }
@@ -502,6 +504,8 @@ void render() {
     std::set<glm::vec3, vec3Comparator> currentChunks;
 
     for (int i = -renderDistance; i <= renderDistance; i++) {
+        if (SocketClient::getInstance().connectionState != PLAY) break;
+
         for (int j = -renderDistance; j <= renderDistance; j++) {
             for (int k = -renderDistance; k <= renderDistance; k++) {
                 if (abs(i)+abs(j)+abs(k) > renderDistance) { continue; }
@@ -738,6 +742,7 @@ int main() {
     PacketHelper::registerPacket(4, []() { return new PlayerAuthInput(); });
     PacketHelper::registerPacket(5, []() { return new LightMap(); });
     PacketHelper::registerPacket(6, []() { return new ChatMessage(); });
+    PacketHelper::registerPacket(7, []() { return new NetworkSettingsPacket(); });
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 

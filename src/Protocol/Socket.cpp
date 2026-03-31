@@ -5,6 +5,7 @@
 #include "PacketHelper.hpp"
 #include "../main.hpp"
 #include "Packets/HandShakePacket.hpp"
+#include "Utils/ZLibUtils.hpp"
 
 EMSCRIPTEN_WEBSOCKET_T ws = 0;
 static ClientSession* localSession = new ClientSession("localhost");
@@ -22,6 +23,18 @@ void SocketClient::on_open() {
 }
 
 void SocketClient::on_message(ClientSession* session, std::vector<uint8_t> data) {
+    if (connectionState != HANDSHAKE_EXCHANGE) {
+        if (data[0] == 0xFF) {
+            data.erase(data.begin());
+        } else {
+            switch (networkSettings.compressionType) {
+                case CompressionType::ZLIB:
+                    data = ZLibUtils::decompress_data(data);
+                    break;
+            }
+        }
+    }
+
     if (Main::isSingleplayer) {
         std::lock_guard<std::mutex> guard(clientPacketQueueMutex);
         clientPacketQueue.push_back(std::pair<ClientSession*, std::vector<uint8_t>>(session, data));
@@ -43,6 +56,7 @@ EM_BOOL remote_message(int type, const EmscriptenWebSocketMessageEvent *e, void 
 }
 
 void SocketClient::connect() {
+    connectionState = HANDSHAKE_EXCHANGE;
     if (Main::serverAddress == "localhost") {
         Main::isSingleplayer = true;
         Main::serverInstance.setCallback([&](ClientSession* session, std::vector<uint8_t> data){on_message(session, data);});
@@ -64,6 +78,21 @@ void SocketClient::connect() {
 
 void SocketClient::sendPacket(Packet* packet) {
     std::vector<uint8_t> data = PacketHelper::encodePacket(packet);
+
+    if (connectionState != HANDSHAKE_EXCHANGE) {
+        auto compressionType  = networkSettings.compressionType;
+
+        if (data.size() < networkSettings.compressionThreshold || compressionType == CompressionType::DUMMY) {
+            data.insert(data.begin(), 0xFF);
+        } else {
+            switch (compressionType) {
+                case CompressionType::ZLIB:
+                    data = ZLibUtils::compress_data(data);
+                    break;
+            }
+        }
+    }
+
     if (Main::isSingleplayer) {
         Main::serverInstance.processPacket(localSession, data);
     }
