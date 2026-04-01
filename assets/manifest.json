@@ -9,6 +9,7 @@
 	],
 	"entities": 
 	[
-		{"id": 49, "texture": "/assets/textures/player.png"}
+		{"id": 49, "texture": "/assets/textures/player.png"},
+		{"id": 50, "texture": "/assets/textures/entity.png"}
 	]
 }

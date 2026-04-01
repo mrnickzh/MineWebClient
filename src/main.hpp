@@ -30,6 +30,7 @@ namespace Main {
     inline std::set<glm::vec3, vec3Comparator> requestedChunks;
 
     inline std::unique_ptr<PhysicsEngine> physicsEngine;
+    inline std::mutex entityMutex;
 
     inline bool isSingleplayer = false;
     inline bool serverConnected = false;

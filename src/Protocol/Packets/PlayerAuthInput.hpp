@@ -10,6 +10,7 @@ public:
         // std::cout << uuid << " uuid" << std::endl;
         for (auto& e : Main::entities) {
            if (e->uuid == uuid) {
+               std::lock_guard<std::mutex> lock(Main::entityMutex);
                float px = buffer.readFloat();
                float py = buffer.readFloat();
                float pz = buffer.readFloat();
@@ -28,6 +29,8 @@ public:
     }
 
     void send(ByteBuf &buffer) override {
+        std::lock_guard<std::mutex> lock(Main::entityMutex);
+
         buffer.writeFloat(Main::localPlayer->object->position.x);
         buffer.writeFloat(Main::localPlayer->object->position.y);
         buffer.writeFloat(Main::localPlayer->object->position.z);

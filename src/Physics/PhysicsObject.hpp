@@ -6,6 +6,7 @@ public:
     std::shared_ptr<Object> object;
     glm::vec3 velocity;
     float mass;
+    bool frozen = false;
 
     PhysicsObject(std::shared_ptr<Object>& obj, float m);
     glm::vec3 getPosition();

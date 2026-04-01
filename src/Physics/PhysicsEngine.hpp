@@ -19,7 +19,7 @@ struct RaycastResult {
 
 class PhysicsEngine {
 public:
-    std::vector<std::shared_ptr<PhysicsObject>> registeredObjects;
+    std::map<glm::vec3, std::vector<std::shared_ptr<PhysicsObject>>, vec3Comparator> registeredObjects;
     std::map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Comparator>* chunkmap;
 
     PhysicsEngine(std::map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Comparator>* worldmap);
@@ -36,7 +36,9 @@ public:
     void step();
 
     bool isColliding(glm::vec3 object1, glm::vec3 object2, glm::vec3 collider1, glm::vec3 collider2);
+    void checkEntityChunk(std::shared_ptr<PhysicsObject> entity, glm::vec3 prevpos);
+    std::vector<std::shared_ptr<PhysicsObject>> possibleEntities(glm::vec3 position);
     bool possibleCollision(glm::vec3 position, glm::vec3 collider, const std::shared_ptr<Object>& object2);
     std::vector<std::shared_ptr<Object>> possibleObstacles(glm::vec3 position);
-    void calculateVelocity(std::shared_ptr<PhysicsObject>& obj);
+    void calculateVelocity(std::shared_ptr<PhysicsObject> obj);
 };

@@ -87,7 +87,7 @@ void SocketClient::sendPacket(Packet* packet) {
         } else {
             switch (compressionType) {
                 case CompressionType::ZLIB:
-                    data = ZLibUtils::compress_data(data);
+                    data = ZLibUtils::compress_data(data, 5);
                     break;
             }
         }

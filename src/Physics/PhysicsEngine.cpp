@@ -8,6 +8,19 @@ PhysicsEngine::PhysicsEngine(std::map<glm::vec3, std::shared_ptr<ChunkMap>, vec3
     chunkmap = worldmap;
 }
 
+void PhysicsEngine::checkEntityChunk(std::shared_ptr<PhysicsObject> entity, glm::vec3 prevpos) {
+    glm::vec3 prevChunk = glm::vec3(floor(prevpos.x / 8.0f), floor(prevpos.y / 8.0f), floor(prevpos.z / 8.0f));
+    glm::vec3 currentChunk = glm::vec3(floor(entity->object->position.x / 8.0f), floor(entity->object->position.y / 8.0f), floor(entity->object->position.z / 8.0f));
+    if (prevChunk != currentChunk) {
+        printf("%f %f %f to %f %f %f\n", prevChunk.x, prevChunk.y, prevChunk.z, currentChunk.x, currentChunk.y, currentChunk.z);
+        registeredObjects[currentChunk].push_back(entity);
+        auto it = std::find_if(registeredObjects[prevChunk].begin(), registeredObjects[prevChunk].end(), [&entity](const std::shared_ptr<PhysicsObject>& obj) {return obj == entity; });
+        if (it != registeredObjects[prevChunk].end()) {
+            registeredObjects[prevChunk].erase(it);
+        }
+    }
+}
+
 bool PhysicsEngine::isColliding(glm::vec3 object1, glm::vec3 object2, glm::vec3 collider1, glm::vec3 collider2) {
     AABB obj1 = GetAABB::CP2AABB(collider1, object1);
     AABB obj2 = GetAABB::CP2AABB(collider2, object2);
@@ -71,9 +84,31 @@ std::vector<std::shared_ptr<Object>> PhysicsEngine::possibleObstacles(glm::vec3 
     return obstacles;
 }
 
-void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject>& obj) {
+std::vector<std::shared_ptr<PhysicsObject>> PhysicsEngine::possibleEntities(glm::vec3 position) {
+    std::vector<std::shared_ptr<PhysicsObject>> obstacles;
+    glm::vec3 currentChunk = glm::vec3(floor(position.x / 8.0f), floor(position.y / 8.0f), floor(position.z / 8.0f));
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            for (int k = -1; k <= 1; k++) {
+                glm::vec3 resultChunk = glm::vec3(currentChunk.x + (float)i, currentChunk.y + (float)j, currentChunk.z + (float)k);
+                if (!registeredObjects.count(resultChunk)) { continue; }
+                for (auto entity : registeredObjects[resultChunk]) {
+                    obstacles.push_back(entity);
+                }
+            }
+        }
+    }
+    return obstacles;
+}
+
+void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject> obj) {
     glm::vec3 vel = obj->velocity;
-    glm::vec3 pos = obj->getPosition();
+    glm::vec3 pos;
+    {
+        std::lock_guard<std::mutex> lock(Main::entityMutex);
+        pos = obj->getPosition();
+    }
+    glm::vec3 prevpos = pos;
 
     // std::cout << vel.x << " " << vel.y << " " << vel.z << std::endl;
 
@@ -84,11 +119,30 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject>& obj) {
     std::vector<std::shared_ptr<Object>> obstacles = possibleObstacles(pos);
     if (obstacles.size() < 36) {
         // std::cout << obstacles.size() << std::endl;
+        checkEntityChunk(obj, prevpos);
         return;
     }
 
     float inertiaAdjusted = 0.002f * obj->mass;
     float gravityAdjusted = 0.003f * obj->mass;
+
+    std::vector<std::shared_ptr<PhysicsObject>> entities = possibleEntities(pos);
+
+    for (auto entity : entities) {
+        if (obj != entity) {
+            bool xCollision = false;
+            bool yCollision = false;
+            bool zCollision = false;
+
+            if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y, pos.z), obj->getCollider(), entity->object)) { entity->velocity.x += vel.x / 2.0f; vel.x -= vel.x / 2.0f; xCollision = true; }
+            if (possibleCollision(glm::vec3(pos.x, pos.y, pos.z + vel.z), obj->getCollider(), entity->object)) { entity->velocity.y += vel.y / 2.0f; vel.y -= vel.y / 2.0f; yCollision = true; }
+            if (possibleCollision(glm::vec3(pos.x, pos.y + vel.y, pos.z), obj->getCollider(), entity->object)) { entity->velocity.z += vel.z / 2.0f; vel.z -= vel.z / 2.0f; zCollision = true;}
+
+            if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y, pos.z + vel.z), obj->getCollider(), entity->object)) { if (!xCollision) { entity->velocity.x += vel.x / 2.0f; vel.x -= vel.x / 2.0f; } if (!zCollision) { entity->velocity.z += vel.z / 2.0f; vel.z -= vel.z / 2.0f; } }
+            if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y + vel.y, pos.z), obj->getCollider(), entity->object)) { if (!xCollision) { entity->velocity.x += vel.x / 2.0f; vel.x -= vel.x / 2.0f; } if (!yCollision) { entity->velocity.y += vel.y / 2.0f; vel.y -= vel.y / 2.0f; } }
+            if (possibleCollision(glm::vec3(pos.x, pos.y + vel.y, pos.z + vel.z), obj->getCollider(), entity->object)) { if (!yCollision) { entity->velocity.y += vel.y / 2.0f; vel.y -= vel.y / 2.0f; } if (!zCollision) { entity->velocity.z += vel.z / 2.0f; vel.z -= vel.z / 2.0f; } }
+        }
+    }
 
     // std::cout << vel.x << " " << (inertiaAdjusted * (std::abs(vel.x) / rate)) << " " << (std::abs(vel.x) / rate) << " x" << std::endl;
     // std::cout << vel.z << " " << (inertiaAdjusted * (std::abs(vel.z) / rate)) << " " << (std::abs(vel.z) / rate) << " z" << std::endl;
@@ -135,24 +189,32 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject>& obj) {
     // std::cout << XCollision << " " << YCollision << " " << ZCollision << std::endl;
     // std::cout << vel.x << " " << vel.y << " " << vel.z << std::endl;
 
-    obj->setPosition(pos);
+    {
+        std::lock_guard<std::mutex> lock(Main::entityMutex);
+        obj->setPosition(pos);
+    }
     // std::cout << obj->getPosition().x << " " << obj->getPosition().y << " " << obj->getPosition().z << std::endl;
     obj->velocity = vel;
+
+    checkEntityChunk(obj, prevpos);
 }
 
 void PhysicsEngine::registerObject(std::shared_ptr<Object> object, float mass) {
     std::shared_ptr<PhysicsObject> physicsObject = std::make_shared<PhysicsObject>(object, mass);
-    registeredObjects.push_back(physicsObject);
+    glm::vec3 currentChunk = glm::vec3(floor(object->position.x / 8.0f), floor(object->position.y / 8.0f), floor(object->position.z / 8.0f));
+    registeredObjects[currentChunk].push_back(physicsObject);
 }
 
 void PhysicsEngine::unregisterObject(std::shared_ptr<Object> object) {
-    auto it = std::find_if(registeredObjects.begin(), registeredObjects.end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
-    if (it != registeredObjects.end()) { registeredObjects.erase(it); }
+    glm::vec3 currentChunk = glm::vec3(floor(object->position.x / 8.0f), floor(object->position.y / 8.0f), floor(object->position.z / 8.0f));
+    auto it = std::find_if(registeredObjects[currentChunk].begin(), registeredObjects[currentChunk].end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
+    if (it != registeredObjects[currentChunk].end()) { registeredObjects[currentChunk].erase(it); }
 }
 
 void PhysicsEngine::addVelocityRotation(std::shared_ptr<Object> object, glm::vec3 velocity) {
-    auto it = std::find_if(registeredObjects.begin(), registeredObjects.end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
-    if (it != registeredObjects.end()) {
+    glm::vec3 currentChunk = glm::vec3(floor(object->position.x / 8.0f), floor(object->position.y / 8.0f), floor(object->position.z / 8.0f));
+    auto it = std::find_if(registeredObjects[currentChunk].begin(), registeredObjects[currentChunk].end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
+    if (it != registeredObjects[currentChunk].end()) {
         glm::vec3 rotation = glm::radians(object->rotation);
         glm::vec3 real_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
         real_velocity.x = (velocity.x * std::cos(rotation.y) * std::cos(rotation.z)) + (velocity.z * -std::sin(rotation.y) * std::cos(rotation.z));
@@ -163,8 +225,9 @@ void PhysicsEngine::addVelocityRotation(std::shared_ptr<Object> object, glm::vec
 }
 
 void PhysicsEngine::addVelocityClampedRotation(std::shared_ptr<Object> object, glm::vec3 velocity, glm::vec3 limit) {
-    auto it = std::find_if(registeredObjects.begin(), registeredObjects.end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
-    if (it != registeredObjects.end()) {
+    glm::vec3 currentChunk = glm::vec3(floor(object->position.x / 8.0f), floor(object->position.y / 8.0f), floor(object->position.z / 8.0f));
+    auto it = std::find_if(registeredObjects[currentChunk].begin(), registeredObjects[currentChunk].end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
+    if (it != registeredObjects[currentChunk].end()) {
         glm::vec3 rotation = glm::radians(object->rotation);
 
         // std::cout << rotation.x << " " << rotation.y << " " << rotation.z << std::endl;
@@ -204,31 +267,36 @@ void PhysicsEngine::addVelocityClampedRotation(std::shared_ptr<Object> object, g
     }}
 
 void PhysicsEngine::setVelocity(std::shared_ptr<Object> object, glm::vec3 velocity) {
-    auto it = std::find_if(registeredObjects.begin(), registeredObjects.end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
-    if (it != registeredObjects.end()) { it->get()->velocity = velocity; }
+    glm::vec3 currentChunk = glm::vec3(floor(object->position.x / 8.0f), floor(object->position.y / 8.0f), floor(object->position.z / 8.0f));
+    auto it = std::find_if(registeredObjects[currentChunk].begin(), registeredObjects[currentChunk].end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
+    if (it != registeredObjects[currentChunk].end()) { it->get()->velocity = velocity; }
 }
 
 void PhysicsEngine::addVelocity(std::shared_ptr<Object> object, glm::vec3 velocity) {
-    auto it = std::find_if(registeredObjects.begin(), registeredObjects.end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
-    if (it != registeredObjects.end()) { it->get()->velocity = glm::vec3(it->get()->velocity.x + velocity.x, it->get()->velocity.y + velocity.y, it->get()->velocity.z + velocity.z); }
+    glm::vec3 currentChunk = glm::vec3(floor(object->position.x / 8.0f), floor(object->position.y / 8.0f), floor(object->position.z / 8.0f));
+    auto it = std::find_if(registeredObjects[currentChunk].begin(), registeredObjects[currentChunk].end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
+    if (it != registeredObjects[currentChunk].end()) { it->get()->velocity = glm::vec3(it->get()->velocity.x + velocity.x, it->get()->velocity.y + velocity.y, it->get()->velocity.z + velocity.z); }
 }
 
 void PhysicsEngine::addVelocityClamped(std::shared_ptr<Object> object, glm::vec3 velocity, glm::vec3 limit) {
-    auto it = std::find_if(registeredObjects.begin(), registeredObjects.end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
-    if (it != registeredObjects.end()) {
+    glm::vec3 currentChunk = glm::vec3(floor(object->position.x / 8.0f), floor(object->position.y / 8.0f), floor(object->position.z / 8.0f));
+    auto it = std::find_if(registeredObjects[currentChunk].begin(), registeredObjects[currentChunk].end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
+    if (it != registeredObjects[currentChunk].end()) {
         it->get()->velocity = glm::vec3(std::clamp(it->get()->velocity.x + velocity.x, -limit.x, limit.x), std::clamp(it->get()->velocity.y + velocity.y, -limit.y, limit.y), std::clamp(it->get()->velocity.z + velocity.z, -limit.z, limit.z));
     }
 }
 
 glm::vec3 PhysicsEngine::getVelocity(std::shared_ptr<Object> object) {
-    auto it = std::find_if(registeredObjects.begin(), registeredObjects.end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
-    if (it != registeredObjects.end()) { return it->get()->velocity; }
+    glm::vec3 currentChunk = glm::vec3(floor(object->position.x / 8.0f), floor(object->position.y / 8.0f), floor(object->position.z / 8.0f));
+    auto it = std::find_if(registeredObjects[currentChunk].begin(), registeredObjects[currentChunk].end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
+    if (it != registeredObjects[currentChunk].end()) { return it->get()->velocity; }
     return glm::vec3(0.0f, 0.0f, 0.0f);
 }
 
 bool PhysicsEngine::isOnFoot(std::shared_ptr<Object> object) {
-    auto it = std::find_if(registeredObjects.begin(), registeredObjects.end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
-    if (it != registeredObjects.end()) {
+    glm::vec3 currentChunk = glm::vec3(floor(object->position.x / 8.0f), floor(object->position.y / 8.0f), floor(object->position.z / 8.0f));
+    auto it = std::find_if(registeredObjects[currentChunk].begin(), registeredObjects[currentChunk].end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
+    if (it != registeredObjects[currentChunk].end()) {
         std::vector<std::shared_ptr<Object>> obstacles = possibleObstacles(it->get()->getPosition());
         for (auto &obstacle : obstacles) {
             if (!obstacle->cancollide) { continue; }
@@ -323,7 +391,14 @@ RaycastResult PhysicsEngine::raycast(float length, glm::vec3 startpos, glm::vec3
 }
 
 void PhysicsEngine::step() {
-    for (std::shared_ptr<PhysicsObject> object : registeredObjects) {
-        calculateVelocity(object);
+    // std::cout << registeredObjects.size() << " total" << std::endl;
+    for (auto& objchunk : registeredObjects) {
+        for (auto object : objchunk.second) {
+            if (object == nullptr) { continue; }
+            if (object->frozen) { continue; }
+            glm::vec3 tmpPos = glm::vec3(objchunk.first.x * 8.0f, objchunk.first.y * 8.0f, objchunk.first.z * 8.0f);
+            checkEntityChunk(object, tmpPos);
+            calculateVelocity(object);
+        }
     }
 }
