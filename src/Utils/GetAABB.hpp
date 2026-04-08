@@ -1,9 +1,9 @@
 #pragma once
 
 #define GLM_FORCE_PURE
-#include "../../lib/glm/glm.hpp"
-#include "../../lib/glm/gtc/matrix_transform.hpp"
-#include "../../lib/glm/gtc/type_ptr.hpp"
+#include "lib/glm/glm.hpp"
+#include "lib/glm/gtc/matrix_transform.hpp"
+#include "lib/glm/gtc/type_ptr.hpp"
 
 struct AABB {
     glm::vec3 AA;

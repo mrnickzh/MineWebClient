@@ -49,7 +49,7 @@ float sidevertices[] = {
     -4.0f,  4.0f,  4.0f,  0.0f, 0.0f  // bottom-left
 };
 
-bool checkValidPos(glm::vec3 pos) {
+bool ChunkMap::checkValidPos(glm::vec3 pos) {
     if (pos.x >= 0.0f && pos.y >= 0.0f && pos.z >= 0.0f && pos.x <= 7.0f && pos.y <= 7.0f && pos.z <= 7.0f) {
         return true;
     }

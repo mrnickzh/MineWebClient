@@ -3,9 +3,9 @@
 #define GLM_FORCE_PURE
 #include <GLES3/gl3.h>
 
-#include "../../lib/glm/glm.hpp"
-#include "../../lib/glm/gtc/matrix_transform.hpp"
-#include "../../lib/glm/gtc/type_ptr.hpp"
+#include "lib/glm/glm.hpp"
+#include "lib/glm/gtc/matrix_transform.hpp"
+#include "lib/glm/gtc/type_ptr.hpp"
 
 struct GlyphInfo
 {

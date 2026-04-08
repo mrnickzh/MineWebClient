@@ -4,7 +4,7 @@
 #include <GLES3/gl3.h>
 
 #include "../Objects/Object.hpp"
-#include "vec3Comparator.hpp"
+#include "../../../MineWebServer/src/Utils/vec3Comparator.hpp"
 #include "../Camera.hpp"
 
 class ChunkMap {
@@ -26,6 +26,7 @@ public:
     ChunkMap();
     ~ChunkMap();
 
+    bool checkValidPos(glm::vec3 pos);
     void addBlock(glm::vec3 blockPos, std::shared_ptr<Object> block);
     std::shared_ptr<Object> getBlock(glm::vec3 blockPos);
     void initTranslations();
