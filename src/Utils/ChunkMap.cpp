@@ -57,6 +57,9 @@ bool ChunkMap::checkValidPos(glm::vec3 pos) {
 }
 
 ChunkMap::~ChunkMap() {
+    free(sides);
+    free(textures);
+    free(translations);
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &IVBO);
@@ -74,9 +77,9 @@ ChunkMap::ChunkMap() {
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    memset(sides, 0, sizeof(sides));
-    memset(translations, 0, sizeof(translations));
-    memset(textures, 0, sizeof(textures));
+    sides = (float*)calloc(0, sizeof(float));
+    textures = (float*)calloc(0, sizeof(float));
+    translations = (glm::mat4*)calloc(0, sizeof(glm::mat4));
     instanceCount = 0;
 
     glGenBuffers(1, &VBO);
@@ -86,12 +89,12 @@ ChunkMap::ChunkMap() {
 
     glGenBuffers(1, &IVBO);
     glBindBuffer(GL_ARRAY_BUFFER, IVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 512 * 6 * 6, &translations[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 6 * 6 * 512, &translations[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glGenBuffers(1, &TBO);
     glBindBuffer(GL_ARRAY_BUFFER, TBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 512 * 6 * 6, &textures[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 6 * 512, &textures[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -105,9 +108,19 @@ std::shared_ptr<Object> ChunkMap::getBlock(glm::vec3 blockPos) {
 }
 
 void ChunkMap::initTranslations() {
-    memset(sides, 0, sizeof(sides));
-    memset(translations, 0, sizeof(translations));
-    memset(textures, 0, sizeof(textures));
+
+    {
+        void* tmp = std::realloc(sides, sizeof(float) * 30 * 6 * 512);
+        sides = (float*)tmp;
+    }
+    {
+        void* tmp = std::realloc(textures, sizeof(float) * 6 * 6 * 512);
+        textures = (float*)tmp;
+    }
+    {
+        void* tmp = std::realloc(translations, sizeof(glm::mat4) * 6 * 6 * 512);
+        translations = (glm::mat4*)tmp;
+    }
     instanceCount = 0;
 
     initBlocks();
@@ -276,16 +289,29 @@ void ChunkMap::initTranslations() {
         }
     }
 
+    {
+        void* tmp = std::realloc(sides, sizeof(float) * 30 * 6 * instanceCount);
+        sides = (float*)tmp;
+    }
+    {
+        void* tmp = std::realloc(textures, sizeof(float) * 6 * 6 * instanceCount);
+        textures = (float*)tmp;
+    }
+    {
+        void* tmp = std::realloc(translations, sizeof(glm::mat4) * 6 * 6 * instanceCount);
+        translations = (glm::mat4*)tmp;
+    }
+
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 30 * 6 * 512, &sides[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 30 * 6 * instanceCount, &sides[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, IVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 512 * 6 * 6, &translations[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 6 * 6 * instanceCount, &translations[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, TBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 512 * 6 * 6, &textures[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 6 * instanceCount, &textures[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
