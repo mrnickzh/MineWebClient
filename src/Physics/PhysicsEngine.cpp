@@ -189,7 +189,19 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject> obj) {
     // std::cout << XCollision << " " << YCollision << " " << ZCollision << std::endl;
     // std::cout << vel.x << " " << vel.y << " " << vel.z << std::endl;
 
-    {
+    if (obj->crouching) {
+        std::lock_guard<std::mutex> lock(Main::entityMutex);
+        bool oldIsOnFoot = isOnFoot(obj);
+        glm::vec3 oldPos = obj->object->position;
+        obj->object->position = pos;
+        if (!isOnFoot(obj) && oldIsOnFoot) {
+            obj->object->position = oldPos;
+        }
+        else {
+            obj->setPosition(pos);
+        }
+    }
+    else {
         std::lock_guard<std::mutex> lock(Main::entityMutex);
         obj->setPosition(pos);
     }
@@ -293,28 +305,31 @@ glm::vec3 PhysicsEngine::getVelocity(std::shared_ptr<Object> object) {
     return glm::vec3(0.0f, 0.0f, 0.0f);
 }
 
-bool PhysicsEngine::isOnFoot(std::shared_ptr<Object> object) {
+std::shared_ptr<PhysicsObject> PhysicsEngine::getPhysicsObject(std::shared_ptr<Object> object) {
     glm::vec3 currentChunk = glm::vec3(floor(object->position.x / 8.0f), floor(object->position.y / 8.0f), floor(object->position.z / 8.0f));
     auto it = std::find_if(registeredObjects[currentChunk].begin(), registeredObjects[currentChunk].end(), [&object](const std::shared_ptr<PhysicsObject>& obj) {return obj->object == object; });
-    if (it != registeredObjects[currentChunk].end()) {
-        std::vector<std::shared_ptr<Object>> obstacles = possibleObstacles(it->get()->getPosition());
-        for (auto &obstacle : obstacles) {
-            if (!obstacle->cancollide) { continue; }
+    if (it != registeredObjects[currentChunk].end()) { return *it; }
+    return nullptr;
+}
 
-            AABB obj1 = GetAABB::CP2AABB(object->collider, object->position);
-            AABB obj2 = GetAABB::CP2AABB(obstacle->collider, obstacle->position);
+bool PhysicsEngine::isOnFoot(std::shared_ptr<PhysicsObject> object) {
+    std::vector<std::shared_ptr<Object>> obstacles = possibleObstacles(object->getPosition());
+    for (auto &obstacle : obstacles) {
+        if (!obstacle->cancollide) { continue; }
 
-            bool footcheckd = obj1.AA.y - 0.01f <= obj2.BB.y;
-            bool footchecku = obj1.AA.y + 0.01f >= obj2.BB.y;
-            bool xcheck1 = obj1.AA.x < obj2.BB.x;
-            bool x1check1 = obj1.BB.x > obj2.AA.x;
-            bool zcheck1 = obj1.AA.z < obj2.BB.z;
-            bool z1check1 = obj1.BB.z > obj2.AA.z;
+        AABB obj1 = GetAABB::CP2AABB(object->object->collider, object->object->position);
+        AABB obj2 = GetAABB::CP2AABB(obstacle->collider, obstacle->position);
 
-            // std::cout << footcheckd << " " << footchecku << std::endl;
+        bool footcheckd = obj1.AA.y - 0.01f <= obj2.BB.y;
+        bool footchecku = obj1.AA.y + 0.01f >= obj2.BB.y;
+        bool xcheck1 = obj1.AA.x < obj2.BB.x;
+        bool x1check1 = obj1.BB.x > obj2.AA.x;
+        bool zcheck1 = obj1.AA.z < obj2.BB.z;
+        bool z1check1 = obj1.BB.z > obj2.AA.z;
 
-            if (footcheckd && footchecku && xcheck1 && x1check1 && zcheck1 && z1check1) { return true; }
-        }
+        // std::cout << footcheckd << " " << footchecku << std::endl;
+
+        if (footcheckd && footchecku && xcheck1 && x1check1 && zcheck1 && z1check1) { return true; }
     }
     return false;
 }

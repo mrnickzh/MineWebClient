@@ -7,6 +7,7 @@ public:
     glm::vec3 velocity;
     float mass;
     bool frozen = false;
+    bool crouching = false;
 
     PhysicsObject(std::shared_ptr<Object>& obj, float m);
     glm::vec3 getPosition();

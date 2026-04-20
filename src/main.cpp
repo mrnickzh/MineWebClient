@@ -142,6 +142,7 @@ float lastCounter = 0.0f;
 
 int selectedblock = 1;
 bool sprint = false;
+bool crouch = false;
 
 float maxH = 0.05f;
 
@@ -278,6 +279,7 @@ void processInput() {
             if (!ourCamera->freeCam) {
                 bool moved = false;
                 float speed = (sprint ? 0.075f : 0.05f);
+                speed = (crouch ? 0.025f : speed);
                 glm::vec3 totalvelocity = glm::vec3(0.0f, 0.0f, 0.0f);
                 if (InputHandler::isKeyPressed("KeyW")) {
                     totalvelocity += glm::vec3(speed, 0.0f, 0.0f);
@@ -295,10 +297,13 @@ void processInput() {
                     totalvelocity += glm::vec3(0.0f, 0.0f, speed);
                     moved = true;
                 }
-                Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, totalvelocity, glm::vec3((sprint ? maxH*1.5 : maxH), 0.1f, (sprint ? maxH*1.5 : maxH)));
-                if (InputHandler::isKeyPressed("Space") && Main::physicsEngine->isOnFoot(Main::localPlayer->object)) {
-                    Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3((sprint ? maxH*1.5 : maxH), 0.1f, (sprint ? maxH*1.5 : maxH)));
-                    moved = true;
+                Main::physicsEngine->addVelocityClampedRotation(Main::localPlayer->object, totalvelocity, glm::vec3((crouch ? maxH*0.5 : (sprint ? maxH*1.5 : maxH)), 0.1f, (crouch ? maxH*0.5 : (sprint ? maxH*1.5 : maxH))));
+                if (InputHandler::isKeyPressed("Space")) {
+                    std::shared_ptr<PhysicsObject> pobj = Main::physicsEngine->getPhysicsObject(Main::localPlayer->object);
+                    if (pobj != nullptr && Main::physicsEngine->isOnFoot(pobj)) {
+                        Main::physicsEngine->addVelocityClamped(Main::localPlayer->object, glm::vec3(0.0f, 0.1f, 0.0f), glm::vec3((crouch ? maxH*0.5 : (sprint ? maxH*1.5 : maxH)), 0.1f, (crouch ? maxH*0.5 : (sprint ? maxH*1.5 : maxH))));
+                        moved = true;
+                    }
                 }
                 if (moved) {
                     PlayerAuthInput packet;
@@ -407,11 +412,20 @@ void processInput() {
                 saveLock = false;
             }
 
-            if (InputHandler::isKeyPressed("ShiftLeft")) {
+            if (InputHandler::isKeyPressed("ShiftLeft") && !sprint) {
                 sprint = true;
             }
-            if (InputHandler::isKeyReleased("ShiftLeft")) {
+            if (InputHandler::isKeyReleased("ShiftLeft") && sprint) {
                 sprint = false;
+            }
+
+            if (InputHandler::isKeyPressed("ControlLeft") && !crouch) {
+                crouch = true;
+                Main::physicsEngine->getPhysicsObject(Main::localPlayer->object)->crouching = true;
+            }
+            if (InputHandler::isKeyReleased("ControlLeft") && crouch) {
+                crouch = false;
+                Main::physicsEngine->getPhysicsObject(Main::localPlayer->object)->crouching = false;
             }
 
             if (InputHandler::isKeyPressed("Digit1")) {
@@ -1084,11 +1098,12 @@ int main() {
             EnterElement* chatenter = static_cast<EnterElement*>(Main::chatUIManager->getElement("chatenter").get());
 
             if (chatenter->active) {
-                if (event->key == "Enter" && !(chatenter->text.empty())) {
-                    ChatMessage packet;
-                    packet.message = chatenter->text;
-                    SocketClient::getInstance().sendPacket(&packet);
-
+                if (event->key == "Enter") {
+                    if (!(chatenter->text.empty())) {
+                        ChatMessage packet;
+                        packet.message = chatenter->text;
+                        SocketClient::getInstance().sendPacket(&packet);
+                    }
                     chatenter->text = "0";
                     chatenter->removeChar();
                     chatenter->active = false;
