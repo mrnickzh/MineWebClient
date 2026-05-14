@@ -1,5 +1,7 @@
 #include "EnterElement.hpp"
 
+#include "../../main.hpp"
+
 EnterElement::EnterElement(std::string id, std::function<void(int, int, int)> callback, int x, int y, int fontsize, FontManager* fm, int ml, std::string deftext, bool bg) : Element(id, callback, x, y, fontsize) {
     fontManager = fm;
     maxlen = ml;

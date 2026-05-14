@@ -4,7 +4,6 @@
 
 #include "Element.hpp"
 #include "../../Utils/FontManager.hpp"
-#include "../../main.hpp"
 
 class EnterElement : public Element {
 public:

@@ -36,38 +36,62 @@ public:
             return;
         }
 
-        switch (id) {
-            case 0: {
-                std::shared_ptr<AirObject> block = std::make_shared<AirObject>(position, glm::vec3(0.0f, 0.0f, 0.0f));
-                Main::chunks[chunkpos]->addBlock(blockpos, block);
-                break;
+        if (id == 0) {
+            std::shared_ptr<AirObject> block = std::make_shared<AirObject>(position, glm::vec3(0.0f, 0.0f, 0.0f));
+            Main::chunks[chunkpos]->addBlock(blockpos, block);
+        }
+        else {
+            Object block = Main::blockRegistry->getBlock(id);
+            if (block.lightlevel > 0) {
+                std::shared_ptr<LightObject> realblock = std::make_shared<LightObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, id, true, glm::vec3(0.5f, 0.5f, 0.5f), block.lightlevel);
+                Main::chunks[chunkpos]->addBlock(blockpos, realblock);
             }
-            case 1: {
-                std::shared_ptr<BlockObject> block = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 1, true, glm::vec3(0.5f, 0.5f, 0.5f));
-                Main::chunks[chunkpos]->addBlock(blockpos, block);
-                break;
-            }
-            case 2: {
-                std::shared_ptr<BlockObject> block = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 2, true, glm::vec3(0.5f, 0.5f, 0.5f));
-                Main::chunks[chunkpos]->addBlock(blockpos, block);
-                break;
-            }
-            case 3: {
-                std::shared_ptr<BlockObject> block = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 3, true, glm::vec3(0.5f, 0.5f, 0.5f));
-                Main::chunks[chunkpos]->addBlock(blockpos, block);
-                break;
-            }
-            case 4: {
-                std::shared_ptr<BlockObject> block = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 4, true, glm::vec3(0.5f, 0.5f, 0.5f));
-                Main::chunks[chunkpos]->addBlock(blockpos, block);
-                break;
-            }
-            case 5: {
-                std::shared_ptr<LightObject> block = std::make_shared<LightObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 5, true, glm::vec3(0.5f, 0.5f, 0.5f), 10);
-                Main::chunks[chunkpos]->addBlock(blockpos, block);
-                break;
+            else {
+                std::shared_ptr<BlockObject> realblock = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, id, true, glm::vec3(0.5f, 0.5f, 0.5f));
+                Main::chunks[chunkpos]->addBlock(blockpos, realblock);
             }
         }
+
+        // switch (id) {
+        //     case 0: {
+        //         std::shared_ptr<AirObject> block = std::make_shared<AirObject>(position, glm::vec3(0.0f, 0.0f, 0.0f));
+        //         Main::chunks[chunkpos]->addBlock(blockpos, block);
+        //         break;
+        //     }
+        //     case 1: {
+        //         std::shared_ptr<BlockObject> block = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 1, true, glm::vec3(0.5f, 0.5f, 0.5f));
+        //         Main::chunks[chunkpos]->addBlock(blockpos, block);
+        //         break;
+        //     }
+        //     case 2: {
+        //         std::shared_ptr<BlockObject> block = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 2, true, glm::vec3(0.5f, 0.5f, 0.5f));
+        //         Main::chunks[chunkpos]->addBlock(blockpos, block);
+        //         break;
+        //     }
+        //     case 3: {
+        //         std::shared_ptr<BlockObject> block = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 3, true, glm::vec3(0.5f, 0.5f, 0.5f));
+        //         Main::chunks[chunkpos]->addBlock(blockpos, block);
+        //         break;
+        //     }
+        //     case 4: {
+        //         std::shared_ptr<BlockObject> block = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 4, true, glm::vec3(0.5f, 0.5f, 0.5f));
+        //         Main::chunks[chunkpos]->addBlock(blockpos, block);
+        //         break;
+        //     }
+        //     case 5: {
+        //         std::shared_ptr<LightObject> block = std::make_shared<LightObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 5, true, glm::vec3(0.5f, 0.5f, 0.5f), 10);
+        //         Main::chunks[chunkpos]->addBlock(blockpos, block);
+        //         break;
+        //     }
+        //     case 6: {
+        //         std::shared_ptr<BlockObject> block = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, 6, true, glm::vec3(0.5f, 0.5f, 0.5f));
+        //         Main::chunks[chunkpos]->addBlock(blockpos, block);
+        //
+        //         Main::modManager->mods["testmod"]->doEvent("block_added");
+        //
+        //         break;
+        //     }
+        // }
 
         Main::chunks[chunkpos]->initTranslations();
     }

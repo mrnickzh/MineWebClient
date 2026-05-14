@@ -5,7 +5,9 @@
 #include "../MineWebServer/src/Server.hpp"
 #include "Entities/Entity.hpp"
 #include "GUI/GUIManager.hpp"
+#include "Modding/ModManager.hpp"
 #include "Physics/PhysicsEngine.hpp"
+#include "Utils/BlockRegistry.hpp"
 #include "Utils/ChunkMap.hpp"
 #include "Utils/FontManager.hpp"
 #include "Utils/TextureManager.hpp"
@@ -31,6 +33,9 @@ namespace Main {
 
     inline std::unique_ptr<PhysicsEngine> physicsEngine;
     inline std::mutex entityMutex;
+
+    inline ModManager* modManager;
+    inline BlockRegistry* blockRegistry;
 
     inline bool isSingleplayer = false;
     inline bool serverConnected = false;

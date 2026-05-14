@@ -1,11 +1,11 @@
 {
 	"blocks": 
 	[
-		{"id": 1, "texture": "/assets/textures/stone.png"},
-		{"id": 2, "texture": "/assets/textures/dirt.png"},
-		{"id": 3, "texture": "/assets/textures/grass.png"},
-		{"id": 4, "texture": "/assets/textures/wood.png"},
-		{"id": 5, "texture": "/assets/textures/lamp.png"}
+		{"id": 1, "texture": "/assets/textures/stone.png", "cancollide": true, "lightlevel": 0},
+		{"id": 2, "texture": "/assets/textures/dirt.png", "cancollide": true, "lightlevel": 0},
+		{"id": 3, "texture": "/assets/textures/grass.png", "cancollide": true, "lightlevel": 0},
+		{"id": 4, "texture": "/assets/textures/wood.png", "cancollide": true, "lightlevel": 0},
+		{"id": 5, "texture": "/assets/textures/lamp.png", "cancollide": true, "lightlevel": 5}
 	],
 	"entities": 
 	[

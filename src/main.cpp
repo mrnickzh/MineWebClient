@@ -34,10 +34,12 @@
 #include "Protocol/Packets/HandShakePacket.hpp"
 #include "Protocol/Packets/PlayerAuthInput.hpp"
 #include "Utils/VertexManager.hpp"
-#include "../lib/json/json.hpp"
+#include "../../MineWebServer/lib/json/json.hpp"
 #include "Protocol/Packets/ChatMessage.hpp"
 #include "Protocol/Packets/LightMap.hpp"
 #include "Protocol/Packets/NetworkSettingsPacket.hpp"
+#include "Protocol/Packets/RegisterMod.hpp"
+#include "Protocol/Packets/TransferMod.hpp"
 
 float vertices[] = {
     // Back face
@@ -163,7 +165,7 @@ bool chatLock = false;
 int renderDistance = 5; // 3 min
 Frustum cameraFrustum;
 
-float ambientLevel = 0.2f;
+float ambientLevel = 1.0f;
 
 int fxaaFlag = 0;
 float fquad[] = {
@@ -339,7 +341,8 @@ void processInput() {
             }
 
             if (InputHandler::isKeyPressed("KeyY") && !raiseLock) {
-                ambientLevel = std::min(ambientLevel + 0.2f, 1.0f);
+                // ambientLevel = std::min(ambientLevel + 0.2f, 1.0f);
+                renderDistance = std::min(renderDistance + 1, 12);
                 raiseLock = true;
             }
             if (InputHandler::isKeyReleased("KeyY") && raiseLock) {
@@ -347,7 +350,8 @@ void processInput() {
             }
 
             if (InputHandler::isKeyPressed("KeyH") && !lowerLock) {
-                ambientLevel = std::max(ambientLevel - 0.2f, 0.0f);
+                // ambientLevel = std::max(ambientLevel - 0.2f, 0.0f);
+                renderDistance = std::max(renderDistance - 1, 3);
                 lowerLock = true;
             }
             if (InputHandler::isKeyReleased("KeyH") && lowerLock) {
@@ -442,6 +446,12 @@ void processInput() {
             }
             if (InputHandler::isKeyPressed("Digit5")) {
                 selectedblock = 5;
+            }
+            if (InputHandler::isKeyPressed("Digit6")) {
+                selectedblock = 6;
+            }
+            if (InputHandler::isKeyPressed("Digit7")) {
+                selectedblock = 7;
             }
 
             if (InputHandler::isKeyPressed("KeyM")) {
@@ -626,6 +636,9 @@ void postRender() {
 }
 
 void loadAssets() {
+    AirObject air = AirObject(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+    Main::blockRegistry->registerBlock(0, static_cast<Object>(air), "base");
+
     nlohmann::json assets;
     std::ifstream manifestfile("/assets/manifest.json");
 
@@ -634,9 +647,16 @@ void loadAssets() {
     } else manifestfile >> assets;
 
     for (auto& element : assets["blocks"].items()) {
-        nlohmann::json block = element.value();
-        int id = block["id"];
-        std::string texture = block["texture"];
+        nlohmann::json mblock = element.value();
+        int id = mblock["id"];
+        std::string texture = mblock["texture"];
+        bool cancollide = mblock["cancollide"];
+        int lightlevel = mblock["lightlevel"];
+        Object block = Object(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 0, id, cancollide, glm::vec3(0.5f, 0.5f, 0.5f));
+        if (lightlevel > 0 ) {
+            block.lightlevel = lightlevel;
+        }
+        Main::blockRegistry->registerBlock(id, block, "base");
         Main::textureManager->addTexture(texture, id);
     }
 
@@ -757,6 +777,11 @@ int main() {
     PacketHelper::registerPacket(5, []() { return new LightMap(); });
     PacketHelper::registerPacket(6, []() { return new ChatMessage(); });
     PacketHelper::registerPacket(7, []() { return new NetworkSettingsPacket(); });
+    PacketHelper::registerPacket(8, []() { return new TransferMod(); });
+    PacketHelper::registerPacket(9, []() { return new RegisterMod(); });
+
+    Main::blockRegistry = new BlockRegistry();
+    Main::modManager = new ModManager();
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
@@ -790,6 +815,7 @@ int main() {
     Main::textureManager->startInit(64, 64, 64);
 
     loadAssets();
+    Main::modManager->initLoad();
 
     // // blocks
     // Main::textureManager->addTexture("/assets/textures/stone.png", 1);

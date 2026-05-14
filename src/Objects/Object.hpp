@@ -15,6 +15,7 @@ public:
     bool cancollide;
     glm::vec3 collider;
     glm::vec2 lightLevels[6] = {glm::vec2{0.0f, -1.0f}, glm::vec2{0.0f, -1.0f}, glm::vec2{0.0f, -1.0f}, glm::vec2{0.0f, -1.0f}, glm::vec2{0.0f, -1.0f}, glm::vec2{0.0f, -1.0f}};
+    int lightlevel = 0;
 
     Object(glm::vec3 position, glm::vec3 rotation, int vboid, int texture, bool cancollide, glm::vec3 collider) : position(position), rotation(rotation), vboid(vboid), texture(texture), cancollide(cancollide), collider(collider) {};
     virtual ~Object() = default;
