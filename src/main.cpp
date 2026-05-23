@@ -35,6 +35,7 @@
 #include "Protocol/Packets/PlayerAuthInput.hpp"
 #include "Utils/VertexManager.hpp"
 #include "../../MineWebServer/lib/json/json.hpp"
+#include "Objects/BillboardObject.hpp"
 #include "Protocol/Packets/ChatMessage.hpp"
 #include "Protocol/Packets/LightMap.hpp"
 #include "Protocol/Packets/NetworkSettingsPacket.hpp"
@@ -166,6 +167,8 @@ int renderDistance = 5; // 3 min
 Frustum cameraFrustum;
 
 float ambientLevel = 1.0f;
+
+BillboardObject* billboard;
 
 int fxaaFlag = 0;
 float fquad[] = {
@@ -503,6 +506,11 @@ void preRender() {
         entity->object->render();
     }
 
+    Main::billboardShader->use();
+    glUniformMatrix4fv(Main::billboardShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
+    glUniformMatrix4fv(Main::billboardShader->uniforms["view"], 1, GL_FALSE, &ourCamera->GetViewMatrix()[0][0]);
+    billboard->render();
+
     Main::ourShader->use();
     glUniformMatrix4fv(Main::ourShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
     glUniformMatrix4fv(Main::ourShader->uniforms["view"], 1, GL_FALSE, &ourCamera->GetViewMatrix()[0][0]);
@@ -802,6 +810,7 @@ int main() {
     Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}, {"background", 0}, {"texindex", 0}});
     Main::entityShader = new Shader("/assets/shaders/vertentity.glsl", "/assets/shaders/fragentity.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}});
     Main::fxaaShader = new Shader("/assets/shaders/vertFXAA.glsl", "/assets/shaders/fragFXAA.glsl", {{"uEnabled", 0}, {"uFrameTex", 0}, {"uViewportSize", 0}});
+    Main::billboardShader = new Shader("/assets/shaders/vertbill.glsl", "/assets/shaders/fragbill.glsl", {{"projection", 0}, {"view", 0}});
 
     std::vector<int> fontsizes = {20, 40};
     Main::fontManager = new FontManager();
@@ -1155,6 +1164,8 @@ int main() {
     // Main::serverInstance.setCallback(SocketClient::getInstance().on_message);
     // SocketClient::getInstance().on_open();
     // SocketClient::getInstance().connect();
+
+    billboard = new BillboardObject(glm::vec3(3.0f, 1.0f, 0.0f));
 
     Main::localPlayer = std::make_shared<Entity>();
     Main::localPlayer->uuid = "local";

@@ -18,6 +18,7 @@ namespace Main {
     inline Shader* fontShader;
     inline Shader* entityShader;
     inline Shader* fxaaShader;
+    inline Shader* billboardShader;
 
     inline VertexManager* vertexManager;
     inline TextureManager* textureManager;
