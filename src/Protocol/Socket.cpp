@@ -60,6 +60,7 @@ void SocketClient::connect() {
     if (Main::serverAddress == "localhost") {
         Main::isSingleplayer = true;
         Main::serverInstance.setCallback([&](ClientSession* session, std::vector<uint8_t> data){on_message(session, data);});
+        Main::serverInstance.start();
         on_open();
         return;
     }
