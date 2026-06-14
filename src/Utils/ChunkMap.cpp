@@ -2,7 +2,6 @@
 
 #include "../main.hpp"
 #include "../Objects/AirObject.hpp"
-#include "../Objects/LightObject.hpp"
 
 float sidevertices[] = {
     // Back face
@@ -57,9 +56,9 @@ bool ChunkMap::checkValidPos(glm::vec3 pos) {
 }
 
 ChunkMap::~ChunkMap() {
-    free(sides);
-    free(textures);
-    free(translations);
+    // free(sides);
+    // free(textures);
+    // free(translations);
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &IVBO);
@@ -67,7 +66,9 @@ ChunkMap::~ChunkMap() {
     glDeleteTextures(1, &chunkTexture);
 }
 
-ChunkMap::ChunkMap() {
+ChunkMap::ChunkMap(glm::vec3 pos) {
+    chunkpos = pos;
+
     glGenVertexArrays(1, &VAO);
 
     glGenTextures(1, &chunkTexture);
@@ -99,31 +100,77 @@ ChunkMap::ChunkMap() {
 }
 
 
-void ChunkMap::addBlock(glm::vec3 blockPos, std::shared_ptr<Object> block) {
-    blocks[(int)(blockPos.x * 64.0f + blockPos.y * 8.0f + blockPos.z)] = block;
+void ChunkMap::addBlock(glm::vec3 blockPos, Object block) {
+    uint64_t pack = 0;
+
+    pack |= ((uint64_t)block.texture & 0xff);
+
+    int shift = 16;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 2; j++) {
+            pack |= ((uint64_t)((int)(block.lightLevels[i * 2 + j].x * 5)) & 0x7) << (shift + (6 * j));
+            pack |= ((uint64_t)(abs((int)(block.lightLevels[i * 2 + j].y * 5))) & 0x7) << (shift + (6 * j) + 3);
+            // if (block.lightLevels[i * 2 + j].x != 0.0f)
+            //     std::cout << (int)(block.lightLevels[i * 2 + j].x * 5) << std::endl;
+        }
+        shift += 16;
+    }
+
+    blocksdata[(int)(blockPos.x * 64.0f + blockPos.y * 8.0f + blockPos.z)] = pack;
+
+    // blocks[(int)(blockPos.x * 64.0f + blockPos.y * 8.0f + blockPos.z)] = block;
 }
 
-std::shared_ptr<Object> ChunkMap::getBlock(glm::vec3 blockPos) {
-    return blocks[(int)(blockPos.x * 64.0f + blockPos.y * 8.0f + blockPos.z)];
+Object ChunkMap::getBlock(glm::vec3 blockPos) {
+    uint64_t pack = blocksdata[(int)(blockPos.x * 64.0f + blockPos.y * 8.0f + blockPos.z)];
+
+    int id = int(pack & 0xff);
+
+    // std::cout << id << std::endl;
+    Object block = Object(glm::vec3(chunkpos.x * 8.0f + blockPos.x, chunkpos.y * 8.0f + blockPos.y, chunkpos.z * 8.0f + blockPos.z), glm::vec3(0.0f, 0.0f, 0.0f), 0, id, (id == 0 ? false : true), glm::vec3(0.5f, 0.5f, 0.5f));
+
+    int shift = 16;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 2; j++) {
+            int x = (int)((pack) >> (shift + (6 * j))) & 0x7;
+            int y = (int)((pack) >> (shift + (6 * j) + 3)) & 0x7;
+            block.lightLevels[i * 2 + j].x = (float)(x) / 5;
+            block.lightLevels[i * 2 + j].y = (float)(y) / -5;
+            // if (x != 0 && y != 5)
+            //     std::cout << x << " " << y << std::endl;
+        }
+        shift += 16;
+    }
+
+    return block;
+
+    // return blocks[(int)(blockPos.x * 64.0f + blockPos.y * 8.0f + blockPos.z)];
+}
+
+void ChunkMap::initLights() {
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_3D, chunkTexture);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA16UI, 8, 8, 8, 0, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT, blocksdata);
 }
 
 void ChunkMap::initTranslations() {
 
     {
-        void* tmp = std::realloc(sides, sizeof(float) * 30 * 6 * 512);
-        sides = (float*)tmp;
+        sides = (float*)calloc(30 * 6 * 512, sizeof(float));
     }
     {
-        void* tmp = std::realloc(textures, sizeof(float) * 6 * 6 * 512);
-        textures = (float*)tmp;
+        textures = (float*)calloc(6 * 6 * 512, sizeof(float));
     }
     {
-        void* tmp = std::realloc(translations, sizeof(glm::mat4) * 6 * 6 * 512);
-        translations = (glm::mat4*)tmp;
+        translations = (glm::mat4*)calloc(6 * 6 * 512, sizeof(glm::mat4));
     }
     instanceCount = 0;
 
-    initBlocks();
+    // initBlocks();
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_3D, chunkTexture);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA16UI, 8, 8, 8, 0, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT, blocksdata);
 
     // glTexSubImage3D(GL_TEXTURE_3D,
     //     0,
@@ -132,6 +179,8 @@ void ChunkMap::initTranslations() {
     //     GL_RGBA,
     //     GL_UNSIGNED_SHORT,
     //     blocksdata);
+
+    glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(chunkpos.x * 8.0f + 3.5f, chunkpos.y * 8.0f + 3.5f, chunkpos.z * 8.0f + 3.5f));
 
     for (int side = 0; side < 6; side++) {
         // if (side != 0) { continue; }
@@ -182,8 +231,8 @@ void ChunkMap::initTranslations() {
                             break;
                     }
                     glm::vec3 pos = glm::vec3(x, y, z);
-                    bool bcurrent = getBlock(glm::vec3(cx, cy, cz))->cancollide;
-                    bool bcompare = (checkValidPos(pos) && getBlock(pos)->cancollide);
+                    bool bcurrent = getBlock(glm::vec3(cx, cy, cz)).cancollide;
+                    bool bcompare = (checkValidPos(pos) && getBlock(pos).cancollide);
                     // std::cout << pos.x << ", " << pos.y << ", " << pos.z << ", " << (bcurrent && !bcompare) << std::endl;
                     mask[n++] = bcurrent && !bcompare;
                 }
@@ -264,7 +313,7 @@ void ChunkMap::initTranslations() {
                             sides[(30 * instanceCount) + (5 * jj) + 4] = sidevertices[30*side + (5 * jj) + 4];
                         }
                         for (int ii = 0; ii < 6; ii++) {
-                            translations[6 * instanceCount + ii] =  glm::translate(glm::mat4(1.0f), glm::vec3(getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->position.x + 3.5f, getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->position.y + 3.5f, getBlock(glm::vec3(0.0f, 0.0f, 0.0f))->position.z + 3.5f));
+                            translations[6 * instanceCount + ii] = trans;
                             textures[6 * instanceCount + ii] = (float)side;
                         }
                         instanceCount++;
@@ -313,45 +362,42 @@ void ChunkMap::initTranslations() {
     glBindBuffer(GL_ARRAY_BUFFER, TBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 6 * instanceCount, &textures[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    free(sides);
+    free(translations);
+    free(textures);
 }
 
-void ChunkMap::initBlocks() {
-    uint16_t blocksdata[512*4];
-
-    int ch = 0;
-    for (int by = 0; by < 8; by++) {
-        for (int bx = 0; bx < 8; bx++) {
-            for (int bz = 0; bz < 8; bz++) {
-                glm::vec3 pos = glm::vec3((float)bx, (float)by, (float)bz);
-
-                uint16_t result[4] = {0, 0, 0, 0};
-                uint64_t* pack = (uint64_t*)result;
-
-                *pack |= ((uint64_t)getBlock(pos)->texture & 0xff);
-
-                int shift = 16;
-                for (int i = 0; i < 3; i++) {
-                    for (int j = 0; j < 2; j++) {
-                        *pack |= ((uint64_t)((int)(getBlock(pos)->lightLevels[i * 2 + j].x * 5)) & 0x7) << (shift + (6 * j));
-                        *pack |= ((uint64_t)(abs((int)(getBlock(pos)->lightLevels[i * 2 + j].y * 5))) & 0x7) << (shift + (6 * j) + 3);
-                    }
-                    shift += 16;
-                }
-
-                blocksdata[4 * ch + 0] = result[0];
-                blocksdata[4 * ch + 1] = result[1];
-                blocksdata[4 * ch + 2] = result[2];
-                blocksdata[4 * ch + 3] = result[3];
-
-                ch++;
-            }
-        }
-    }
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_3D, chunkTexture);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA16UI, 8, 8, 8, 0, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT, blocksdata);
-}
+// void ChunkMap::initBlocks() {
+//     int ch = 0;
+//     for (int by = 0; by < 8; by++) {
+//         for (int bx = 0; bx < 8; bx++) {
+//             for (int bz = 0; bz < 8; bz++) {
+//                 glm::vec3 pos = glm::vec3((float)bx, (float)by, (float)bz);
+//
+//                 uint64_t pack = 0;
+//
+//                 pack |= ((uint64_t)getBlock(pos)->texture & 0xff);
+//
+//                 int shift = 16;
+//                 for (int i = 0; i < 3; i++) {
+//                     for (int j = 0; j < 2; j++) {
+//                         pack |= ((uint64_t)((int)(getBlock(pos)->lightLevels[i * 2 + j].x * 5)) & 0x7) << (shift + (6 * j));
+//                         pack |= ((uint64_t)(abs((int)(getBlock(pos)->lightLevels[i * 2 + j].y * 5))) & 0x7) << (shift + (6 * j) + 3);
+//                     }
+//                     shift += 16;
+//                 }
+//
+//                 blocksdata[ch] = pack;
+//                 ch++;
+//             }
+//         }
+//     }
+//
+//     glActiveTexture(GL_TEXTURE2);
+//     glBindTexture(GL_TEXTURE_3D, chunkTexture);
+//     glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA16UI, 8, 8, 8, 0, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT, blocksdata);
+// }
 
 void ChunkMap::renderChunk() {
     glBindVertexArray(VAO);

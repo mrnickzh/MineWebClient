@@ -47,7 +47,7 @@ void main()
         coords.z = int(ceil(fragChunkPos.y + 3.99999f));
     }
 
-    uvec4 pack = texelFetch(chunkSampler, coords, 0);
+    uvec4 pack = texelFetch(chunkSampler, ivec3(coords.x, coords.z, coords.y), 0);
 
     vec2 lightvalues;
     float blockid = float(int(pack[0] & 0xffu));

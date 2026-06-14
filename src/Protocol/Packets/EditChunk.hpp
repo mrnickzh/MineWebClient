@@ -9,7 +9,6 @@
 #include "lib/glm/glm.hpp"
 #include "lib/glm/gtc/matrix_transform.hpp"
 #include "lib/glm/gtc/type_ptr.hpp"
-#include "../../Objects/LightObject.hpp"
 
 
 class EditChunk : public Packet {
@@ -36,21 +35,7 @@ public:
             return;
         }
 
-        if (id == 0) {
-            std::shared_ptr<AirObject> block = std::make_shared<AirObject>(position, glm::vec3(0.0f, 0.0f, 0.0f));
-            Main::chunks[chunkpos]->addBlock(blockpos, block);
-        }
-        else {
-            Object block = Main::blockRegistry->getBlock(id);
-            if (block.lightlevel > 0) {
-                std::shared_ptr<LightObject> realblock = std::make_shared<LightObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, id, true, glm::vec3(0.5f, 0.5f, 0.5f), block.lightlevel);
-                Main::chunks[chunkpos]->addBlock(blockpos, realblock);
-            }
-            else {
-                std::shared_ptr<BlockObject> realblock = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, id, true, glm::vec3(0.5f, 0.5f, 0.5f));
-                Main::chunks[chunkpos]->addBlock(blockpos, realblock);
-            }
-        }
+        Main::chunks[chunkpos]->addBlock(blockpos, Object(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, id, (id == 0 ? false : true), glm::vec3(0.5f, 0.5f, 0.5f)));
 
         // switch (id) {
         //     case 0: {

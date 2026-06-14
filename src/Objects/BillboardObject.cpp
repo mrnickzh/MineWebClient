@@ -111,12 +111,4 @@ void BillboardObject::setrotation(glm::vec3 rot) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void BillboardObject::setlight(int level, int side) {
-    lightLevels[side].x = (float)level / 5.0f;
-}
-
-void BillboardObject::setdarkness(int level, int side) {
-    lightLevels[side].y = (float)level / 5.0f;
-}
-
 

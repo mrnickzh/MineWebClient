@@ -10,8 +10,8 @@ class GenerateChunk : public Packet {
         glm::vec3 chunkpos;
 
     void receive(ByteBuf &buffer) override {
-        std::shared_ptr<ChunkMap> chunkMap = std::make_shared<ChunkMap>();
         chunkpos = glm::vec3(buffer.readFloat(), buffer.readFloat(), buffer.readFloat());
+        std::shared_ptr<ChunkMap> chunkMap = std::make_shared<ChunkMap>(chunkpos);
         int ch = 0;
 
         for (int x = 0; x < 8; x++) {
@@ -28,21 +28,7 @@ class GenerateChunk : public Packet {
 
                     // printf("%d\n", id);
 
-                    if (id == 0) {
-                        std::shared_ptr<AirObject> air = std::make_shared<AirObject>(position, glm::vec3(0.0f, 0.0f, 0.0f));
-                        chunkMap->addBlock(blockpos, air);
-                    }
-                    else {
-                        Object block = Main::blockRegistry->getBlock(id);
-                        if (block.lightlevel > 0) {
-                            std::shared_ptr<LightObject> realblock = std::make_shared<LightObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, id, true, glm::vec3(0.5f, 0.5f, 0.5f), block.lightlevel);
-                            chunkMap->addBlock(blockpos, realblock);
-                        }
-                        else {
-                            std::shared_ptr<BlockObject> realblock = std::make_shared<BlockObject>(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, id, true, glm::vec3(0.5f, 0.5f, 0.5f));
-                            chunkMap->addBlock(blockpos, realblock);
-                        }
-                    }
+                    chunkMap->addBlock(blockpos, Object(position, glm::vec3(0.0f, 0.0f, 0.0f), 0, id, (id == 0 ? false : true), glm::vec3(0.5f, 0.5f, 0.5f)));
 
                     // switch (id) {
                     //     case 0: {

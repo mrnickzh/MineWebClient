@@ -99,12 +99,4 @@ void EntityObject::setrotation(glm::vec3 rot) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void EntityObject::setlight(int level, int side) {
-    lightLevels[side].x = (float)level / 5.0f;
-}
-
-void EntityObject::setdarkness(int level, int side) {
-    lightLevels[side].y = (float)level / 5.0f;
-}
-
 

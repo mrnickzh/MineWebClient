@@ -2,7 +2,6 @@
 
 #include "../Packet.hpp"
 #include "../../main.hpp"
-#include "../../Objects/AirObject.hpp"
 #include "../../Objects/BlockObject.hpp"
 
 class LightMap : public Packet {
@@ -24,32 +23,27 @@ class LightMap : public Packet {
                     glm::vec3 blockpos = glm::vec3(buffer.readFloat(), buffer.readFloat(), buffer.readFloat());
                     int lights[12] = {buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt()};
                     // ch += 1;
-                    chunkMap->getBlock(blockpos)->setlight(lights[0], 0);
-                    chunkMap->getBlock(blockpos)->setlight(lights[2], 1);
-                    chunkMap->getBlock(blockpos)->setlight(lights[4], 2);
-                    chunkMap->getBlock(blockpos)->setlight(lights[6], 3);
-                    chunkMap->getBlock(blockpos)->setlight(lights[8], 4);
-                    chunkMap->getBlock(blockpos)->setlight(lights[10], 5);
+                    Object object = chunkMap->getBlock(blockpos);
 
-                    chunkMap->getBlock(blockpos)->setdarkness(lights[1], 0);
-                    chunkMap->getBlock(blockpos)->setdarkness(lights[3], 1);
-                    chunkMap->getBlock(blockpos)->setdarkness(lights[5], 2);
-                    chunkMap->getBlock(blockpos)->setdarkness(lights[7], 3);
-                    chunkMap->getBlock(blockpos)->setdarkness(lights[9], 4);
-                    chunkMap->getBlock(blockpos)->setdarkness(lights[11], 5);
+                    for (int i = 0; i < 6; i++) {
+                        object.lightLevels[i].x = (float)lights[i * 2] / 5.0f;
+                        object.lightLevels[i].y = (float)lights[i * 2 + 1] / 5.0f;
+                    }
 
-                    // if ((chunkpos.x == 0.0f && chunkpos.z == -1.0f) && (lights[0] != 0 || lights[2] != 0 || lights[4] != 0 || lights[6] != 0 || lights[8] != 0 || lights[10] != 0)) {
-                    //     printf("%f %f %f block %d %d %d %d %d %d light\n", blockpos.x, blockpos.y, blockpos.z, lights[0], lights[2], lights[4], lights[6], lights[8], lights[10]);
+                    // if ((chunkpos.x == 0.0f && chunkpos.y == 0.0f && chunkpos.z == 0.0f) && (lights[1] != -5 || lights[3] != -5 || lights[5] != -5 || lights[7] != -5 || lights[9] != -5 || lights[11] != -5)) {
+                    //     printf("%f %f %f block %f %f %f %f %f %f light\n", blockpos.x, blockpos.y, blockpos.z, block->lightLevels[0].y, block->lightLevels[1].y, block->lightLevels[2].y, block->lightLevels[3].y, block->lightLevels[4].y, block->lightLevels[5].y);
                     // }
+
+                    chunkMap->addBlock(blockpos, object);
                 }
             }
         }
 
+        chunkMap->initLights();
+
         // if (ch > 512) {
         //     // std::cout << chunkpos.x << " " << chunkpos.y << " " << chunkpos.z << std::endl;
         // }
-
-        chunkMap->initBlocks();
     }
     void send(ByteBuf &buffer) override {}
 };

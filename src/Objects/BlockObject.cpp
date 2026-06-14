@@ -26,11 +26,3 @@ void BlockObject::setrotation(glm::vec3 rot) {
     model *= glm::mat4_cast(glm::quat(glm::radians(-rotation)));
 }
 
-void BlockObject::setlight(int level, int side) {
-    lightLevels[side].x = (float)level / 5.0f;
-}
-
-void BlockObject::setdarkness(int level, int side) {
-    lightLevels[side].y = (float)level / 5.0f;
-}
-

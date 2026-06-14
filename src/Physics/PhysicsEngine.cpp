@@ -42,13 +42,13 @@ bool PhysicsEngine::isColliding(glm::vec3 object1, glm::vec3 object2, glm::vec3 
     return false;
 }
 
-bool PhysicsEngine::possibleCollision(glm::vec3 position, glm::vec3 collider, const std::shared_ptr<Object>& object2) {
-    if (!object2->cancollide) { return false; }
-    return isColliding(position, object2->position, collider, object2->collider);
+bool PhysicsEngine::possibleCollision(glm::vec3 position, glm::vec3 collider, const Object& object2) {
+    if (!object2.cancollide) { return false; }
+    return isColliding(position, object2.position, collider, object2.collider);
 }
 
-std::vector<std::shared_ptr<Object>> PhysicsEngine::possibleObstacles(glm::vec3 position) {
-    std::vector<std::shared_ptr<Object>> obstacles;
+std::vector<Object> PhysicsEngine::possibleObstacles(glm::vec3 position) {
+    std::vector<Object> obstacles;
     glm::vec3 currentChunk = glm::vec3(floor(position.x / 8.0f), floor(position.y / 8.0f), floor(position.z / 8.0f));
     glm::vec3 currentChunkBlock = glm::vec3(floor(std::fmod(position.x, 8.0f)), floor(std::fmod(position.y, 8.0f)), floor(std::fmod(position.z, 8.0f)));
     currentChunkBlock.x += (currentChunk.x < 0.0f ? (currentChunkBlock.x == 0.0f ? 0.0f : 8.0f) : 0.0f);
@@ -116,7 +116,7 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject> obj) {
     bool XCollision = false;
     bool ZCollision = false;
 
-    std::vector<std::shared_ptr<Object>> obstacles = possibleObstacles(pos);
+    std::vector<Object> obstacles = possibleObstacles(pos);
     if (obstacles.size() < 36) {
         // std::cout << obstacles.size() << std::endl;
         checkEntityChunk(obj, prevpos);
@@ -134,13 +134,13 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject> obj) {
             bool yCollision = false;
             bool zCollision = false;
 
-            if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y, pos.z), obj->getCollider(), entity->object)) { entity->velocity.x += vel.x / 2.0f; vel.x -= vel.x / 2.0f; xCollision = true; }
-            if (possibleCollision(glm::vec3(pos.x, pos.y, pos.z + vel.z), obj->getCollider(), entity->object)) { entity->velocity.y += vel.y / 2.0f; vel.y -= vel.y / 2.0f; yCollision = true; }
-            if (possibleCollision(glm::vec3(pos.x, pos.y + vel.y, pos.z), obj->getCollider(), entity->object)) { entity->velocity.z += vel.z / 2.0f; vel.z -= vel.z / 2.0f; zCollision = true;}
+            if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y, pos.z), obj->getCollider(), *(entity->object))) { entity->velocity.x += vel.x / 2.0f; vel.x -= vel.x / 2.0f; xCollision = true; }
+            if (possibleCollision(glm::vec3(pos.x, pos.y, pos.z + vel.z), obj->getCollider(), *(entity->object))) { entity->velocity.y += vel.y / 2.0f; vel.y -= vel.y / 2.0f; yCollision = true; }
+            if (possibleCollision(glm::vec3(pos.x, pos.y + vel.y, pos.z), obj->getCollider(), *(entity->object))) { entity->velocity.z += vel.z / 2.0f; vel.z -= vel.z / 2.0f; zCollision = true;}
 
-            if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y, pos.z + vel.z), obj->getCollider(), entity->object)) { if (!xCollision) { entity->velocity.x += vel.x / 2.0f; vel.x -= vel.x / 2.0f; } if (!zCollision) { entity->velocity.z += vel.z / 2.0f; vel.z -= vel.z / 2.0f; } }
-            if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y + vel.y, pos.z), obj->getCollider(), entity->object)) { if (!xCollision) { entity->velocity.x += vel.x / 2.0f; vel.x -= vel.x / 2.0f; } if (!yCollision) { entity->velocity.y += vel.y / 2.0f; vel.y -= vel.y / 2.0f; } }
-            if (possibleCollision(glm::vec3(pos.x, pos.y + vel.y, pos.z + vel.z), obj->getCollider(), entity->object)) { if (!yCollision) { entity->velocity.y += vel.y / 2.0f; vel.y -= vel.y / 2.0f; } if (!zCollision) { entity->velocity.z += vel.z / 2.0f; vel.z -= vel.z / 2.0f; } }
+            if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y, pos.z + vel.z), obj->getCollider(), *(entity->object))) { if (!xCollision) { entity->velocity.x += vel.x / 2.0f; vel.x -= vel.x / 2.0f; } if (!zCollision) { entity->velocity.z += vel.z / 2.0f; vel.z -= vel.z / 2.0f; } }
+            if (possibleCollision(glm::vec3(pos.x + vel.x, pos.y + vel.y, pos.z), obj->getCollider(), *(entity->object))) { if (!xCollision) { entity->velocity.x += vel.x / 2.0f; vel.x -= vel.x / 2.0f; } if (!yCollision) { entity->velocity.y += vel.y / 2.0f; vel.y -= vel.y / 2.0f; } }
+            if (possibleCollision(glm::vec3(pos.x, pos.y + vel.y, pos.z + vel.z), obj->getCollider(), *(entity->object))) { if (!yCollision) { entity->velocity.y += vel.y / 2.0f; vel.y -= vel.y / 2.0f; } if (!zCollision) { entity->velocity.z += vel.z / 2.0f; vel.z -= vel.z / 2.0f; } }
         }
     }
 
@@ -313,12 +313,12 @@ std::shared_ptr<PhysicsObject> PhysicsEngine::getPhysicsObject(std::shared_ptr<O
 }
 
 bool PhysicsEngine::isOnFoot(std::shared_ptr<PhysicsObject> object) {
-    std::vector<std::shared_ptr<Object>> obstacles = possibleObstacles(object->getPosition());
+    std::vector<Object> obstacles = possibleObstacles(object->getPosition());
     for (auto &obstacle : obstacles) {
-        if (!obstacle->cancollide) { continue; }
+        if (!obstacle.cancollide) { continue; }
 
         AABB obj1 = GetAABB::CP2AABB(object->object->collider, object->object->position);
-        AABB obj2 = GetAABB::CP2AABB(obstacle->collider, obstacle->position);
+        AABB obj2 = GetAABB::CP2AABB(obstacle.collider, obstacle.position);
 
         bool footcheckd = obj1.AA.y - 0.01f <= obj2.BB.y;
         bool footchecku = obj1.AA.y + 0.01f >= obj2.BB.y;
@@ -377,14 +377,14 @@ RaycastResult PhysicsEngine::raycast(float length, glm::vec3 startpos, glm::vec3
         // std::cout << collisionChunkBlock.x << ", " << collisionChunkBlock.y << ", " << collisionChunkBlock.z << std::endl;
         // std::cout << position.x << " " << position.y << " " << position.z << std::endl;
         if ((*chunkmap).find(collisionChunk) != (*chunkmap).end()) {
-            std::shared_ptr<Object> object2 = (*chunkmap)[collisionChunk]->getBlock(collisionChunkBlock);
+            Object object2 = (*chunkmap)[collisionChunk]->getBlock(collisionChunkBlock);
             // std::cout << object2->position.x << " " << object2->position.y << " " << object2->position.z << " " << object2->cancollide << std::endl;
-            if (object2->cancollide) {
+            if (object2.cancollide) {
                 result.hit = true;
-                result.distance = glm::distance(startpos, object2->position);
+                result.distance = glm::distance(startpos, object2.position);
                 result.blockpos = collisionChunkBlock;
                 result.chunkpos = collisionChunk;
-                result.object = object2;
+                result.object = std::make_shared<Object>(object2);
                 break;
             }
             else {
@@ -392,7 +392,7 @@ RaycastResult PhysicsEngine::raycast(float length, glm::vec3 startpos, glm::vec3
                 // std::cout << collisionChunkBlock.x << ", " << collisionChunkBlock.y << ", " << collisionChunkBlock.z << std::endl;
                 result.prevblockpos = collisionChunkBlock;
                 result.prevchunkpos = collisionChunk;
-                result.prevobject = object2;
+                result.prevobject = std::make_shared<Object>(object2);
             }
         }
 

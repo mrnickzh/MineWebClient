@@ -20,6 +20,4 @@ public:
     void render() override;
     void setposition(glm::vec3 position) override;
     void setrotation(glm::vec3 rotation) override;
-    void setlight(int level, int side) override;
-    void setdarkness(int level, int side) override;
 };

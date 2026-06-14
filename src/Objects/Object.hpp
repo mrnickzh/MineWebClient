@@ -23,6 +23,4 @@ public:
     virtual void render() {}
     virtual void setposition(glm::vec3 position) {}
     virtual void setrotation(glm::vec3 rotation) {}
-    virtual void setlight(int level, int side) {}
-    virtual void setdarkness(int level, int side) {}
 };

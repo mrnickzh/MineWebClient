@@ -388,8 +388,7 @@ void processInput() {
                 glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
                 RaycastResult obj = Main::physicsEngine->raycast(4.0f, p, r);
                 if (obj.hit) {
-                    if (!Main::physicsEngine->possibleCollision(obj.prevobject->position, glm::vec3(0.5f, 0.5f, 0.5f), Main::localPlayer->object)) {
-                        std::shared_ptr<LightObject> wood = std::make_shared<LightObject>(obj.prevobject->position, obj.prevobject->rotation, 0, 5, true, glm::vec3(0.5f, 0.5f, 0.5f), 10);
+                    if (!Main::physicsEngine->possibleCollision(obj.prevobject->position, glm::vec3(0.5f, 0.5f, 0.5f), *(Main::localPlayer->object))) {
                         // std::cout << obj.prevchunkpos.x << " " << obj.prevchunkpos.y << " " << obj.prevchunkpos.z << std::endl;
                         // std::cout << obj.prevblockpos.x << " " << obj.prevblockpos.y << " " << obj.prevblockpos.z << std::endl;
                         // Main::chunks[obj.prevchunkpos]->addBlock(obj.prevblockpos, wood);
@@ -523,7 +522,7 @@ void render() {
     glm::vec3 playerPos = Main::localPlayer->object->position;
     glm::vec3 playerChunk = glm::vec3(floor(playerPos.x / 8.0f), floor(playerPos.y / 8.0f), floor(playerPos.z / 8.0f));
 
-    std::string coordsstr = "x: " + std::to_string(playerPos.x) + " y: " + std::to_string(playerPos.y) + " z: " + std::to_string(playerPos.z) + " cx: " + std::to_string((int)playerChunk.x) + " cy: " + std::to_string((int)playerChunk.y) + " cz: " + std::to_string((int)playerChunk.z) + " blk: " + std::to_string(selectedblock) + " mem: " + std::to_string(emscripten_get_heap_size());
+    std::string coordsstr = "x: " + std::to_string(playerPos.x) + " y: " + std::to_string(playerPos.y) + " z: " + std::to_string(playerPos.z) + " cx: " + std::to_string((int)playerChunk.x) + " cy: " + std::to_string((int)playerChunk.y) + " cz: " + std::to_string((int)playerChunk.z) + " blk: " + std::to_string(selectedblock) + " rds: " + std::to_string(renderDistance) + " mem: " + std::to_string(emscripten_get_heap_size());
     std::shared_ptr<Element> e = Main::gameUIManager->getElement("coords");
     static_cast<TextElement*>(e.get())->setText(coordsstr);
 
@@ -661,7 +660,7 @@ void loadAssets() {
         bool cancollide = mblock["cancollide"];
         int lightlevel = mblock["lightlevel"];
         Object block = Object(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 0, id, cancollide, glm::vec3(0.5f, 0.5f, 0.5f));
-        if (lightlevel > 0 ) {
+        if (lightlevel > 0) {
             block.lightlevel = lightlevel;
         }
         Main::blockRegistry->registerBlock(id, block, "base");

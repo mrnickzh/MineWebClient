@@ -9,8 +9,9 @@
 
 class ChunkMap {
 public:
+    glm::vec3 chunkpos;
     // std::map<glm::vec3, std::shared_ptr<Object>, vec3Comparator> blocks;
-    std::array<std::shared_ptr<Object>, 512> blocks;
+    uint64_t blocksdata[512];
     // glm::mat4 translations[6*6*512];
     // float sides[30*6*512];
     // float textures[6*6*512];
@@ -26,14 +27,14 @@ public:
 
     GLuint chunkTexture = 0;
 
-    ChunkMap();
+    ChunkMap(glm::vec3 pos);
     ~ChunkMap();
 
     bool checkValidPos(glm::vec3 pos);
-    void addBlock(glm::vec3 blockPos, std::shared_ptr<Object> block);
-    std::shared_ptr<Object> getBlock(glm::vec3 blockPos);
+    void addBlock(glm::vec3 blockPos, Object block);
+    Object getBlock(glm::vec3 blockPos);
     void initTranslations();
-    void initBlocks();
+    void initLights();
     void renderChunk();
     bool checkCull(Frustum& frustum, glm::vec3 chunkpos);
 };

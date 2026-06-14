@@ -39,7 +39,7 @@ public:
     bool isColliding(glm::vec3 object1, glm::vec3 object2, glm::vec3 collider1, glm::vec3 collider2);
     void checkEntityChunk(std::shared_ptr<PhysicsObject> entity, glm::vec3 prevpos);
     std::vector<std::shared_ptr<PhysicsObject>> possibleEntities(glm::vec3 position);
-    bool possibleCollision(glm::vec3 position, glm::vec3 collider, const std::shared_ptr<Object>& object2);
-    std::vector<std::shared_ptr<Object>> possibleObstacles(glm::vec3 position);
+    bool possibleCollision(glm::vec3 position, glm::vec3 collider, const Object& object2);
+    std::vector<Object> possibleObstacles(glm::vec3 position);
     void calculateVelocity(std::shared_ptr<PhysicsObject> obj);
 };
