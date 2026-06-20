@@ -26,8 +26,8 @@ class LightMap : public Packet {
                     Object object = chunkMap->getBlock(blockpos);
 
                     for (int i = 0; i < 6; i++) {
-                        object.lightLevels[i].x = (float)lights[i * 2] / 5.0f;
-                        object.lightLevels[i].y = (float)lights[i * 2 + 1] / 5.0f;
+                        object.lightLevels[i].x = (float)lights[i * 2] / 10.0f;
+                        object.lightLevels[i].y = (float)lights[i * 2 + 1] / 10.0f;
                     }
 
                     // if ((chunkpos.x == 0.0f && chunkpos.y == 0.0f && chunkpos.z == 0.0f) && (lights[1] != -5 || lights[3] != -5 || lights[5] != -5 || lights[7] != -5 || lights[9] != -5 || lights[11] != -5)) {

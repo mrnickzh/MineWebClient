@@ -108,8 +108,8 @@ void ChunkMap::addBlock(glm::vec3 blockPos, Object block) {
     int shift = 16;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 2; j++) {
-            pack |= ((uint64_t)((int)(block.lightLevels[i * 2 + j].x * 5)) & 0x7) << (shift + (6 * j));
-            pack |= ((uint64_t)(abs((int)(block.lightLevels[i * 2 + j].y * 5))) & 0x7) << (shift + (6 * j) + 3);
+            pack |= ((uint64_t)((int)(block.lightLevels[i * 2 + j].x * 10)) & 0xF) << (shift + (8 * j));
+            pack |= ((uint64_t)(abs((int)(block.lightLevels[i * 2 + j].y * 10))) & 0xF) << (shift + (8 * j) + 4);
             // if (block.lightLevels[i * 2 + j].x != 0.0f)
             //     std::cout << (int)(block.lightLevels[i * 2 + j].x * 5) << std::endl;
         }
@@ -132,10 +132,10 @@ Object ChunkMap::getBlock(glm::vec3 blockPos) {
     int shift = 16;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 2; j++) {
-            int x = (int)((pack) >> (shift + (6 * j))) & 0x7;
-            int y = (int)((pack) >> (shift + (6 * j) + 3)) & 0x7;
-            block.lightLevels[i * 2 + j].x = (float)(x) / 5;
-            block.lightLevels[i * 2 + j].y = (float)(y) / -5;
+            int x = (int)((pack) >> (shift + (8 * j))) & 0xF;
+            int y = (int)((pack) >> (shift + (8 * j) + 4)) & 0xF;
+            block.lightLevels[i * 2 + j].x = (float)(x) / 10;
+            block.lightLevels[i * 2 + j].y = (float)(y) / -10;
             // if (x != 0 && y != 5)
             //     std::cout << x << " " << y << std::endl;
         }

@@ -54,8 +54,8 @@ void main()
 
     int shift = int(mod(float(chunkSide), 2.0f));
 
-    lightvalues.x = float(int((pack[chunkSide / 2 + 1] >> (6 * shift)) & 0x7u)) / 5.0f;
-    lightvalues.y = float(int((pack[chunkSide / 2 + 1] >> (6 * shift + 3)) & 0x7u)) / -5.0f;
+    lightvalues.x = float(int((pack[chunkSide / 2 + 1] >> (8 * shift)) & 0xFu)) / 10.0f;
+    lightvalues.y = float(int((pack[chunkSide / 2 + 1] >> (8 * shift + 4)) & 0xFu)) / -10.0f;
 
     vec3 pointlight = vec3(1.0f, 1.0f, 0.75f) * lightvalues.x;
     vec3 ambientlight = vec3(0.75f, 0.75f, 1.0f) * clamp(ambientLevel + lightvalues.y, 0.1f, 1.0f);

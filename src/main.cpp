@@ -344,8 +344,8 @@ void processInput() {
             }
 
             if (InputHandler::isKeyPressed("KeyY") && !raiseLock) {
-                // ambientLevel = std::min(ambientLevel + 0.2f, 1.0f);
-                renderDistance = std::min(renderDistance + 1, 12);
+                ambientLevel = std::min(ambientLevel + 0.1f, 1.0f);
+                // renderDistance = std::min(renderDistance + 1, 12);
                 raiseLock = true;
             }
             if (InputHandler::isKeyReleased("KeyY") && raiseLock) {
@@ -353,8 +353,8 @@ void processInput() {
             }
 
             if (InputHandler::isKeyPressed("KeyH") && !lowerLock) {
-                // ambientLevel = std::max(ambientLevel - 0.2f, 0.0f);
-                renderDistance = std::max(renderDistance - 1, 3);
+                ambientLevel = std::max(ambientLevel - 0.1f, 0.0f);
+                // renderDistance = std::max(renderDistance - 1, 3);
                 lowerLock = true;
             }
             if (InputHandler::isKeyReleased("KeyH") && lowerLock) {
