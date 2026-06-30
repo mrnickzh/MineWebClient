@@ -61,13 +61,13 @@ ChunkMap::~ChunkMap() {
     // free(translations);
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &IVBO);
     glDeleteBuffers(1, &TBO);
     glDeleteTextures(1, &chunkTexture);
 }
 
 ChunkMap::ChunkMap(glm::vec3 pos) {
     chunkpos = pos;
+    trans = glm::translate(glm::mat4(1.0f), glm::vec3(chunkpos.x * 8.0f + 3.5f, chunkpos.y * 8.0f + 3.5f, chunkpos.z * 8.0f + 3.5f));
 
     glGenVertexArrays(1, &VAO);
 
@@ -80,17 +80,11 @@ ChunkMap::ChunkMap(glm::vec3 pos) {
 
     sides = (float*)calloc(0, sizeof(float));
     textures = (float*)calloc(0, sizeof(float));
-    translations = (glm::mat4*)calloc(0, sizeof(glm::mat4));
     instanceCount = 0;
 
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 30 * 6 * 512, &sides[0], GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glGenBuffers(1, &IVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, IVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 6 * 6 * 512, &translations[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glGenBuffers(1, &TBO);
@@ -160,9 +154,6 @@ void ChunkMap::initTranslations() {
     }
     {
         textures = (float*)calloc(6 * 6 * 512, sizeof(float));
-    }
-    {
-        translations = (glm::mat4*)calloc(6 * 6 * 512, sizeof(glm::mat4));
     }
     instanceCount = 0;
 
@@ -313,7 +304,6 @@ void ChunkMap::initTranslations() {
                             sides[(30 * instanceCount) + (5 * jj) + 4] = sidevertices[30*side + (5 * jj) + 4];
                         }
                         for (int ii = 0; ii < 6; ii++) {
-                            translations[6 * instanceCount + ii] = trans;
                             textures[6 * instanceCount + ii] = (float)side;
                         }
                         instanceCount++;
@@ -346,17 +336,9 @@ void ChunkMap::initTranslations() {
         void* tmp = std::realloc(textures, sizeof(float) * 6 * 6 * instanceCount);
         textures = (float*)tmp;
     }
-    {
-        void* tmp = std::realloc(translations, sizeof(glm::mat4) * 6 * 6 * instanceCount);
-        translations = (glm::mat4*)tmp;
-    }
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 30 * 6 * instanceCount, &sides[0], GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, IVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 6 * 6 * instanceCount, &translations[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, TBO);
@@ -364,7 +346,6 @@ void ChunkMap::initTranslations() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     free(sides);
-    free(translations);
     free(textures);
 }
 
@@ -402,6 +383,8 @@ void ChunkMap::initTranslations() {
 void ChunkMap::renderChunk() {
     glBindVertexArray(VAO);
 
+    glUniformMatrix4fv(Main::ourShader->uniforms["model"], 1, GL_FALSE, &trans[0][0]);
+
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_3D, chunkTexture);
 
@@ -415,17 +398,6 @@ void ChunkMap::renderChunk() {
     glBindBuffer(GL_ARRAY_BUFFER, TBO);
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, IVBO);
-    glEnableVertexAttribArray(3);
-    glEnableVertexAttribArray(4);
-    glEnableVertexAttribArray(5);
-    glEnableVertexAttribArray(6);
-    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * 4 * sizeof(float), (void*)(0));
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * 4 * sizeof(float), (void*)(4 * sizeof(float)));
-    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * 4 * sizeof(float), (void*)(8 * sizeof(float)));
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * 4 * sizeof(float), (void*)(12 * sizeof(float)));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // for (int i = 0; i < instanceCount; i++) {

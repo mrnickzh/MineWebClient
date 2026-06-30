@@ -15,14 +15,13 @@ public:
     // glm::mat4 translations[6*6*512];
     // float sides[30*6*512];
     // float textures[6*6*512];
-    glm::mat4* translations;
+    glm::mat4 trans;
     float* sides;
     float* textures;
     int instanceCount;
 
     GLuint VBO = 0;
     GLuint VAO = 0;
-    GLuint IVBO = 0;
     GLuint TBO = 0;
 
     GLuint chunkTexture = 0;
