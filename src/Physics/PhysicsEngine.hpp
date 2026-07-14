@@ -19,10 +19,10 @@ struct RaycastResult {
 
 class PhysicsEngine {
 public:
-    std::map<glm::vec3, std::vector<std::shared_ptr<PhysicsObject>>, vec3Comparator> registeredObjects;
-    std::map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Comparator>* chunkmap;
+    std::unordered_map<glm::vec3, std::vector<std::shared_ptr<PhysicsObject>>, vec3Hash<float>, vec3Equals> registeredObjects;
+    std::unordered_map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Hash<float>, vec3Equals>* chunkmap;
 
-    PhysicsEngine(std::map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Comparator>* worldmap);
+    PhysicsEngine(std::unordered_map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Hash<float>, vec3Equals>* worldmap);
     void registerObject(std::shared_ptr<Object> object, float mass);
     void unregisterObject(std::shared_ptr<Object> object);
     void addVelocityRotation(std::shared_ptr<Object> object, glm::vec3 velocity);

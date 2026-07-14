@@ -4,7 +4,7 @@
 #include "../Objects/AirObject.hpp"
 #include "../Utils/GetAABB.hpp"
 
-PhysicsEngine::PhysicsEngine(std::map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Comparator>* worldmap) {
+PhysicsEngine::PhysicsEngine(std::unordered_map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Hash<float>, vec3Equals>* worldmap) {
     chunkmap = worldmap;
 }
 
