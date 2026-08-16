@@ -21,7 +21,7 @@
 #include "../MineWebServer/src/Server.hpp"
 #include "Event/EventBus.hpp"
 #include "Event/Events/KeyEvent.hpp"
-#include "Event/Events/MouseMoveEvent.hpp"
+#include "Event/Events/MouseEvent.hpp"
 #include "Event/Events/TickEvent.hpp"
 #include "GUI/Elements/EnterElement.hpp"
 #include "GUI/Elements/TextElement.hpp"
@@ -620,24 +620,6 @@ void postRender() {
     Main::touchManager->render();
     Main::chatUIManager->render();
 
-    int stateMask = 0x0000;
-
-    if (InputHandler::isMousePressed(MOUSE_LEFT))
-        stateMask |= LEFT_CLICK;
-    if (InputHandler::isMousePressed(MOUSE_RIGHT))
-        stateMask |= RIGHT_CLICK;
-    if (InputHandler::isMousePressed(MOUSE_MIDDLE))
-        stateMask |= MIDDLE_CLICK;
-    if (InputHandler::isKeyPressed("ControlLeft"))
-        stateMask |= CTRL_FLAG;
-    if (InputHandler::isKeyPressed("ShiftLeft"))
-        stateMask |= SHIFT_FLAG;
-
-    Main::menuManager->poll(Main::mouseX, Main::mouseY, stateMask);
-    Main::gameUIManager->poll(Main::mouseX, Main::mouseY, stateMask);
-    Main::touchManager->poll(Main::mouseX, Main::mouseY, stateMask);
-    Main::chatUIManager->poll(Main::mouseX, Main::mouseY, stateMask);
-
     std::shared_ptr<Element> e = Main::gameUIManager->getElement("crosshair");
     e->setPosition(windowWidth/2-10, windowHeight/2-10);
 }
@@ -737,7 +719,7 @@ void mainLoop() {
 
     if (Main::isSingleplayer) {
         // std::cout << SocketClient::getInstance().clientPacketQueue.size() << " queue" << std::endl;
-        if (!SocketClient::getInstance().clientPacketQueue.empty()) {
+        while (!SocketClient::getInstance().clientPacketQueue.empty()) {
             // std::lock_guard<std::mutex> guard(SocketClient::getInstance().clientPacketQueueMutex);
             if (SocketClient::getInstance().clientPacketQueueMutex.try_lock()) {
                 std::pair<ClientSession*, std::vector<uint8_t>> packet = SocketClient::getInstance().clientPacketQueue.front();
@@ -792,17 +774,36 @@ int main() {
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-    L_SUBSCRIBE(MouseMoveEvent, [](MouseMoveEvent* event) {
+    L_SUBSCRIBE(MouseEvent, [](MouseEvent* event) {
+        if (event->canceled) {return;}
         int x = event->posx;
         int y = event->posy;
         int dx = event->deltax;
         int dy = event->deltay;
 
-        Main::mouseX = x;
-        Main::mouseY = y;
+        int stateMask = 0x0000;
 
-        if (checkPointerLock() || Main::isMobile)
+        if (event->button == MOUSE_LEFT && event->down)
+            stateMask |= LEFT_CLICK;
+        if (event->button == MOUSE_RIGHT && event->down)
+            stateMask |= RIGHT_CLICK;
+        if (event->button == MOUSE_MIDDLE && event->down)
+            stateMask |= MIDDLE_CLICK;
+        if (InputHandler::isKeyPressed("ControlLeft"))
+            stateMask |= CTRL_FLAG;
+        if (InputHandler::isKeyPressed("ShiftLeft"))
+            stateMask |= SHIFT_FLAG;
+
+        bool processed = false;
+        if (Main::menuManager->poll(x, y, stateMask, event->canceled)) { event->cancel(); processed = true; }
+        if (Main::gameUIManager->poll(x, y, stateMask, event->canceled)) { event->cancel(); processed = true; }
+        if (Main::touchManager->poll(x, y, stateMask, event->canceled)) { event->cancel(); processed = true; }
+        if (Main::chatUIManager->poll(x, y, stateMask, event->canceled)) { event->cancel(); processed = true; }
+
+        if (!event->canceled && (checkPointerLock() || Main::isMobile)) {
             ourCamera->ProcessMouseMovement(dx, -dy);
+            event->cancel();
+        }
     });
 
     Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}, {"ambientLevel", 0}, {"chunkSampler", 0}, {"model", 0}});
@@ -851,14 +852,14 @@ int main() {
     {
         Main::chatUIManager = new GUIManager();
         Main::chatUIManager->active = false;
-        std::shared_ptr<EnterElement> chatenter = std::make_shared<EnterElement>("chatenter", [](int, int, int){}, 20, 500, 20, Main::fontManager, 128, "", true);
+        std::shared_ptr<EnterElement> chatenter = std::make_shared<EnterElement>("chatenter", [](int, int, int, bool)->bool{return false;}, 20, 500, 20, Main::fontManager, 128, "", true);
         chatenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
         chatenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         chatenter->active = false;
         chatenter->enteractive = true;
         Main::chatUIManager->addElement(chatenter);
         for (int i = 0; i < 5; i++){
-            std::shared_ptr<TextElement> chatrow = std::make_shared<TextElement>("chatrow" + std::to_string(i), [](int, int, int){}, 20, 450 - (i * 25), 20, Main::fontManager, false);
+            std::shared_ptr<TextElement> chatrow = std::make_shared<TextElement>("chatrow" + std::to_string(i), [](int, int, int, bool)->bool{return false;}, 20, 450 - (i * 25), 20, Main::fontManager, false);
             chatrow->color = glm::vec3(1.0f, 1.0f, 1.0f);
             chatrow->setText("");
             Main::chatUIManager->addElement(chatrow);
@@ -868,15 +869,15 @@ int main() {
     {
         Main::gameUIManager = new GUIManager();
         Main::gameUIManager->active = false;
-        std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int, int, int){}, 0, 20, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int, int, int, bool)->bool{return false;}, 0, 20, 20, Main::fontManager, false);
         fpscounter->color = glm::vec3(0.0f, 0.0f, 0.0f);
         fpscounter->setText("FPS: 0");
         Main::gameUIManager->addElement(fpscounter);
-        std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int, int, int){}, 0, 0, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int, int, int, bool)->bool{return false;}, 0, 0, 20, Main::fontManager, false);
         crosshair->color = glm::vec3(1.0f, 1.0f, 1.0f);
         crosshair->setText("+");
         Main::gameUIManager->addElement(crosshair);
-        std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int, int, int){}, 0, 40, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int, int, int, bool)->bool{return false;}, 0, 40, 20, Main::fontManager, false);
         coords->color = glm::vec3(0.0f, 0.0f, 0.0f);
         coords->setText("x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0, blk: 1, mem: 0");
         Main::gameUIManager->addElement(coords);
@@ -884,15 +885,15 @@ int main() {
 
     {
         Main::menuManager = new GUIManager();
-        std::shared_ptr<TextElement> gamelabel = std::make_shared<TextElement>("gamelabel", [](int, int, int){}, (windowWidth/2)-80, 40, 40, Main::fontManager, false);
+        std::shared_ptr<TextElement> gamelabel = std::make_shared<TextElement>("gamelabel", [](int, int, int, bool)->bool{return false;}, (windowWidth/2)-80, 40, 40, Main::fontManager, false);
         gamelabel->color = glm::vec3(0.25f, 0.75f, 0.25f);
         gamelabel->setText("MineWeb");
         Main::menuManager->addElement(gamelabel);
-        std::shared_ptr<TextElement> verlabel = std::make_shared<TextElement>("verlabel", [](int, int, int){}, (windowWidth/2)-60, 80, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> verlabel = std::make_shared<TextElement>("verlabel", [](int, int, int, bool)->bool{return false;}, (windowWidth/2)-60, 80, 20, Main::fontManager, false);
         verlabel->color = glm::vec3(0.5f, 0.5f, 0.5f);
         verlabel->setText("Version: dev");
         Main::menuManager->addElement(verlabel);
-        std::shared_ptr<TextElement> nicklabel = std::make_shared<TextElement>("nicklabel", [](int, int, int){}, 100, 160, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> nicklabel = std::make_shared<TextElement>("nicklabel", [](int, int, int, bool)->bool{return false;}, 100, 160, 20, Main::fontManager, false);
         nicklabel->color = glm::vec3(0.1f, 0.1f, 0.1f);
         nicklabel->setText("Nickname:");
         Main::menuManager->addElement(nicklabel);
@@ -900,7 +901,7 @@ int main() {
         nickenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
         nickenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         Main::menuManager->addElement(nickenter);
-        std::shared_ptr<TextElement> iplabel = std::make_shared<TextElement>("iplabel", [](int, int, int){}, 100, 240, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> iplabel = std::make_shared<TextElement>("iplabel", [](int, int, int, bool)->bool{return false;}, 100, 240, 20, Main::fontManager, false);
         iplabel->color = glm::vec3(0.1f, 0.1f, 0.1f);
         iplabel->setText("Server IP:");
         Main::menuManager->addElement(iplabel);
@@ -908,31 +909,35 @@ int main() {
         ipenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
         ipenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         Main::menuManager->addElement(ipenter);
-        nickenter->callback = [&, nickenter, ipenter](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { return; }
+        nickenter->callback = [&, nickenter, ipenter](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { return false; }
             if (x > (nickenter->x - 5) && x < (nickenter->x + 10 * nickenter->maxlen) && y > (nickenter->y - 25) && y < (nickenter->y + 5)) {
                 nickenter->enteractive = true;
                 if (Main::isMobile) { emscripten_run_script("callKeyboard(false)"); }
+                return true;
             }
             else {
                 nickenter->enteractive = false;
                 if (Main::isMobile && !(x > (ipenter->x - 5) && x < (ipenter->x + 10 * ipenter->maxlen) && y > (ipenter->y - 25) && y < (ipenter->y + 5))) { emscripten_run_script("callKeyboard(true)"); }
             }
+            return false;
         };
-        ipenter->callback = [&, ipenter, nickenter](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { return; }
+        ipenter->callback = [&, ipenter, nickenter](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { return false; }
             if (x > (ipenter->x - 5) && x < (ipenter->x + 10 * ipenter->maxlen) && y > (ipenter->y - 25) && y < (ipenter->y + 5)) {
                 ipenter->enteractive = true;
                 if (Main::isMobile) { emscripten_run_script("callKeyboard(false)"); }
+                return true;
             }
             else {
                 ipenter->enteractive = false;
                 if (Main::isMobile && !(x > (nickenter->x - 5) && x < (nickenter->x + 10 * nickenter->maxlen) && y > (nickenter->y - 25) && y < (nickenter->y + 5))) { emscripten_run_script("callKeyboard(true)"); }
             }
+            return false;
         };
         std::shared_ptr<TextElement> joinbutton = std::make_shared<TextElement>("joinbutton", nullptr, 100, 320, 20, Main::fontManager, true);
-        joinbutton->callback = [&, joinbutton, ipenter, nickenter](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { return; }
+        joinbutton->callback = [&, joinbutton, ipenter, nickenter](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { return false; }
             if (x > (joinbutton->x - 5) && x < (joinbutton->x - 5 + 10 * joinbutton->text.length()) && y > (joinbutton->y - 25) && y < (joinbutton->y + 5)) {
                 Main::serverAddress = ipenter->text;
                 if (nickenter->text.empty()) { srand(time(NULL)); Main::localName = "player" + std::to_string(1000 + rand() % (9999 - 1000 + 1)); }
@@ -944,15 +949,17 @@ int main() {
                 Main::gameUIManager->active = true;
                 Main::chatUIManager->active = true;
                 if (Main::isMobile) { Main::touchManager->active = true; }
+                return true;
             }
+            return false;
         };
         joinbutton->color = glm::vec3(1.0f, 1.0f, 1.0f);
         joinbutton->bcolor = glm::vec3(1.0f, 0.5f, 0.5f);
         joinbutton->setText("Join Server");
         Main::menuManager->addElement(joinbutton);
         std::shared_ptr<TextElement> localbutton = std::make_shared<TextElement>("localbutton", nullptr, 100, 420, 20, Main::fontManager, true);
-        localbutton->callback = [&, localbutton, ipenter, nickenter](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { return; }
+        localbutton->callback = [&, localbutton, ipenter, nickenter](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { return false; }
             if (x > (localbutton->x - 5) && x < (localbutton->x - 5 + 10 * localbutton->text.length()) && y > (localbutton->y - 25) && y < (localbutton->y + 5)) {
                 Main::serverAddress = "localhost";
                 Main::localName = "player";
@@ -963,19 +970,23 @@ int main() {
                 Main::gameUIManager->active = true;
                 Main::chatUIManager->active = true;
                 if (Main::isMobile) { Main::touchManager->active = true; }
+                return true;
             }
+            return false;
         };
         localbutton->color = glm::vec3(1.0f, 1.0f, 1.0f);
         localbutton->bcolor = glm::vec3(0.5f, 1.0f, 0.5f);
         localbutton->setText("Play Offline");
         Main::menuManager->addElement(localbutton);
         std::shared_ptr<TextElement> importbutton = std::make_shared<TextElement>("importbutton", nullptr, 100, 480, 20, Main::fontManager, true);
-        importbutton->callback = [&, importbutton](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { loadLock = false; return; }
+        importbutton->callback = [&, importbutton](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { loadLock = false; return false; }
             if (x > (importbutton->x - 5) && x < (importbutton->x - 5 + 10 * importbutton->text.length()) && y > (importbutton->y - 25) && y < (importbutton->y + 5) && !loadLock) {
                 emscripten_run_script("uploadSave()");
                 loadLock = true;
+                return true;
             }
+            return false;
         };
         importbutton->color = glm::vec3(1.0f, 1.0f, 1.0f);
         importbutton->bcolor = glm::vec3(0.5f, 0.5f, 1.0f);
@@ -986,109 +997,110 @@ int main() {
     {
         Main::touchManager = new GUIManager();
         std::shared_ptr<TextElement> callfullscreen = std::make_shared<TextElement>("callfullscreen", nullptr, 600, 20, 20, Main::fontManager, true);
-        callfullscreen->callback = [&, callfullscreen](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { return; }
+        callfullscreen->callback = [&, callfullscreen](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { return false; }
             if (x > (callfullscreen->x - 5) && x < (callfullscreen->x - 5 + 10 * callfullscreen->text.length()) && y > (callfullscreen->y - 25) && y < (callfullscreen->y + 5)) {
                 emscripten_request_fullscreen("canvas", EM_TRUE);
+                return true;
             }
+            return false;
         };
         callfullscreen->color = glm::vec3(1.0f, 1.0f, 1.0f);
         callfullscreen->bcolor = glm::vec3(1.0f, 1.0f, 0.5f);
         callfullscreen->setText("FLSCRN");
         Main::touchManager->addElement(callfullscreen);
         std::shared_ptr<TextElement> moveforward = std::make_shared<TextElement>("moveforward", nullptr, 150, 250, 20, Main::fontManager, true);
-        moveforward->callback = [&, moveforward](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyW"); return; }
+        moveforward->callback = [&, moveforward](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyW"); return false; }
             if (x > (moveforward->x - 5) && x < (moveforward->x - 5 + 10 * moveforward->text.length()) && y > (moveforward->y - 25) && y < (moveforward->y + 5)) {
                 InputHandler::addKey("KeyW");
+                return true;
             }
-            else {
-                InputHandler::removeKey("KeyW");
-            }
+            return false;
         };
         moveforward->color = glm::vec3(1.0f, 1.0f, 1.0f);
         moveforward->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         moveforward->setText("/\\");
         Main::touchManager->addElement(moveforward);
         std::shared_ptr<TextElement> movebackward = std::make_shared<TextElement>("movebackward", nullptr, 150, 350, 20, Main::fontManager, true);
-        movebackward->callback = [&, movebackward](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyS"); return; }
+        movebackward->callback = [&, movebackward](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyS"); return false; }
             if (x > (movebackward->x - 5) && x < (movebackward->x - 5 + 10 * movebackward->text.length()) && y > (movebackward->y - 25) && y < (movebackward->y + 5)) {
                 InputHandler::addKey("KeyS");
+                
+                return true;
             }
-            else {
-                InputHandler::removeKey("KeyS");
-            }
+            return false;
         };
         movebackward->color = glm::vec3(1.0f, 1.0f, 1.0f);
         movebackward->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         movebackward->setText("\\/");
         Main::touchManager->addElement(movebackward);
         std::shared_ptr<TextElement> moveright = std::make_shared<TextElement>("moveright", nullptr, 200, 300, 20, Main::fontManager, true);
-        moveright->callback = [&, moveright](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyD"); return; }
+        moveright->callback = [&, moveright](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyD"); return false; }
             if (x > (moveright->x - 5) && x < (moveright->x - 5 + 10 * moveright->text.length()) && y > (moveright->y - 25) && y < (moveright->y + 5)) {
                 InputHandler::addKey("KeyD");
+                
+                return true;
             }
-            else {
-                InputHandler::removeKey("KeyD");
-            }
+            return false;
         };
         moveright->color = glm::vec3(1.0f, 1.0f, 1.0f);
         moveright->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         moveright->setText(">>");
         Main::touchManager->addElement(moveright);
         std::shared_ptr<TextElement> moveleft = std::make_shared<TextElement>("moveleft", nullptr, 100, 300, 20, Main::fontManager, true);
-        moveleft->callback = [&, moveleft](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyA"); return; }
+        moveleft->callback = [&, moveleft](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyA"); return false; }
             if (x > (moveleft->x - 5) && x < (moveleft->x - 5 + 10 * moveleft->text.length()) && y > (moveleft->y - 25) && y < (moveleft->y + 5)) {
                 InputHandler::addKey("KeyA");
+                
+                return true;
             }
-            else {
-                InputHandler::removeKey("KeyA");
-            }
+            return false;
         };
         moveleft->color = glm::vec3(1.0f, 1.0f, 1.0f);
         moveleft->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         moveleft->setText("<<");
         Main::touchManager->addElement(moveleft);
         std::shared_ptr<TextElement> movejump = std::make_shared<TextElement>("movejump", nullptr, 650, 300, 20, Main::fontManager, true);
-        movejump->callback = [&, movejump](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("Space"); return; }
+        movejump->callback = [&, movejump](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("Space"); return false; }
             if (x > (movejump->x - 5) && x < (movejump->x - 5 + 10 * movejump->text.length()) && y > (movejump->y - 25) && y < (movejump->y + 5)) {
                 InputHandler::addKey("Space");
+                
+                return true;
             }
-            else {
-                InputHandler::removeKey("Space");
-            }
+            return false;
         };
         movejump->color = glm::vec3(1.0f, 1.0f, 1.0f);
         movejump->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         movejump->setText("^");
         Main::touchManager->addElement(movejump);
         std::shared_ptr<TextElement> leftclick = std::make_shared<TextElement>("leftclick", nullptr, 75, 50, 20, Main::fontManager, true);
-        leftclick->callback = [&, leftclick](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("LeftMouse"); return; }
+        leftclick->callback = [&, leftclick](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("LeftMouse"); return false; }
             if (x > (leftclick->x - 5) && x < (leftclick->x - 5 + 10 * leftclick->text.length()) && y > (leftclick->y - 25) && y < (leftclick->y + 5)) {
                 InputHandler::addKey("LeftMouse");
+                
+                return true;
             }
-            else {
-                InputHandler::removeKey("LeftMouse");
-            }
+            return false;
         };
         leftclick->color = glm::vec3(1.0f, 1.0f, 1.0f);
         leftclick->bcolor = glm::vec3(0.5f, 0.5f, 1.0f);
         leftclick->setText("LMB");
         Main::touchManager->addElement(leftclick);
         std::shared_ptr<TextElement> rightclick = std::make_shared<TextElement>("rightclick", nullptr, 150, 50, 20, Main::fontManager, true);
-        rightclick->callback = [&, rightclick](int x, int y, int stateMask) {
-            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("RightMouse"); return; }
+        rightclick->callback = [&, rightclick](int x, int y, int stateMask, bool isProcessed) -> bool {
+            if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("RightMouse"); return false; }
             if (x > (rightclick->x - 5) && x < (rightclick->x - 5 + 10 * rightclick->text.length()) && y > (rightclick->y - 25) && y < (rightclick->y + 5)) {
                 InputHandler::addKey("RightMouse");
+                
+                return true;
             }
-            else {
-                InputHandler::removeKey("RightMouse");
-            }
+            return false;
         };
         rightclick->color = glm::vec3(1.0f, 1.0f, 1.0f);
         rightclick->bcolor = glm::vec3(1.0f, 0.5f, 0.5f);

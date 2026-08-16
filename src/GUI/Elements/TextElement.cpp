@@ -2,7 +2,7 @@
 
 #include "../../main.hpp"
 
-TextElement::TextElement(std::string id, std::function<void(int, int, int)> callback, int x, int y, int fontsize, FontManager* fm, bool bg) : Element(id, callback, x, y, fontsize) {
+TextElement::TextElement(std::string id, std::function<bool(int, int, int, bool)> callback, int x, int y, int fontsize, FontManager* fm, bool bg) : Element(id, callback, x, y, fontsize) {
     fontManager = fm;
     background = bg;
 }

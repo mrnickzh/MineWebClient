@@ -49,8 +49,5 @@ namespace Main {
 
     inline std::deque<std::string> chatMessages = {"", "", "", "", ""};
 
-    inline int mouseX = 0;
-    inline int mouseY = 0;
-
     inline bool isMobile = false;
 }
