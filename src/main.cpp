@@ -789,7 +789,7 @@ int main() {
         fpscounter->color = glm::vec3(0.0f, 0.0f, 0.0f);
         fpscounter->setText("FPS: 0");
         Main::gameUIManager->addElement(fpscounter);
-        std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int, int, int, bool)->bool{return false;}, 47.5f, 47.5f, 40, Main::fontManager, false);
+        std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int, int, int, bool)->bool{return false;}, 48.5f, 48.5f, 40, Main::fontManager, false);
         crosshair->color = glm::vec3(1.0f, 1.0f, 1.0f);
         crosshair->setText("+");
         Main::gameUIManager->addElement(crosshair);
