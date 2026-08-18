@@ -83,14 +83,7 @@ ChunkMap::ChunkMap(glm::vec3 pos) {
     instanceCount = 0;
 
     glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 30 * 6 * 512, &sides[0], GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
     glGenBuffers(1, &TBO);
-    glBindBuffer(GL_ARRAY_BUFFER, TBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 6 * 512, &textures[0], GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 

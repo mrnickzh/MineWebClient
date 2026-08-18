@@ -136,6 +136,9 @@ Camera* ourCamera;
 
 GLFWwindow* window = nullptr;
 
+float targetWidth = 1920.0f;
+float targetHeight = 1080.0f;
+
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float lastCounter = 0.0f;
@@ -150,17 +153,10 @@ GLuint vertexShader;
 GLuint fragmentShader;
 GLuint shaderProgram;
 
-bool freeCamLock = false;
 bool placeLock = false;
 bool breakLock = false;
-bool saveLock = false;
 bool loadLock = false;
-bool raiseLock = false;
-bool lowerLock = false;
-bool fxaaLock = false;
-bool chatLock = false;
 
-int renderDistance = 5; // 3 min
 Frustum cameraFrustum;
 
 float ambientLevel = 1.0f;
@@ -238,6 +234,9 @@ extern "C" {
 EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
     Main::windowWidth  = (int)((float)e->windowInnerWidth * Main::DPR);
     Main::windowHeight = (int)((float)e->windowInnerHeight * Main::DPR);
+
+    // Main::windowScaleX = Main::windowWidth / targetWidth;
+    // Main::windowScaleY = Main::windowHeight / targetHeight;
 
     emscripten_set_canvas_element_size("#canvas", Main::windowWidth, Main::windowHeight);
     emscripten_set_element_css_size("#canvas", (double)e->windowInnerWidth, (double)e->windowInnerHeight);
@@ -436,7 +435,7 @@ void render() {
     glm::vec3 playerPos = Main::localPlayer->object->position;
     glm::vec3 playerChunk = glm::vec3(floor(playerPos.x / 8.0f), floor(playerPos.y / 8.0f), floor(playerPos.z / 8.0f));
 
-    std::string coordsstr = "x: " + std::to_string(playerPos.x) + " y: " + std::to_string(playerPos.y) + " z: " + std::to_string(playerPos.z) + " cx: " + std::to_string((int)playerChunk.x) + " cy: " + std::to_string((int)playerChunk.y) + " cz: " + std::to_string((int)playerChunk.z) + " blk: " + std::to_string(selectedblock) + " rds: " + std::to_string(renderDistance) + " mem: " + std::to_string(emscripten_get_heap_size());
+    std::string coordsstr = "x: " + std::to_string(playerPos.x) + " y: " + std::to_string(playerPos.y) + " z: " + std::to_string(playerPos.z) + " cx: " + std::to_string((int)playerChunk.x) + " cy: " + std::to_string((int)playerChunk.y) + " cz: " + std::to_string((int)playerChunk.z) + " blk: " + std::to_string(selectedblock) + " rds: " + std::to_string(Main::renderDistance) + " mem: " + std::to_string(emscripten_get_heap_size());
     std::shared_ptr<Element> e = Main::gameUIManager->getElement("coords");
     static_cast<TextElement*>(e.get())->setText(coordsstr);
 
@@ -448,12 +447,12 @@ void render() {
 
     std::set<glm::vec3, vec3Comparator> currentChunks;
 
-    for (int i = -renderDistance; i <= renderDistance; i++) {
+    for (int i = -Main::renderDistance; i <= Main::renderDistance; i++) {
         if (SocketClient::getInstance().connectionState != PLAY) break;
 
-        for (int j = -renderDistance; j <= renderDistance; j++) {
-            for (int k = -renderDistance; k <= renderDistance; k++) {
-                if (abs(i)+abs(j)+abs(k) > renderDistance) { continue; }
+        for (int j = -Main::renderDistance; j <= Main::renderDistance; j++) {
+            for (int k = -Main::renderDistance; k <= Main::renderDistance; k++) {
+                if (abs(i)+abs(j)+abs(k) > Main::renderDistance) { continue; }
 
                 glm::vec3 requestedChunk = glm::vec3(playerChunk.x + (float)i, playerChunk.y + (float)j, playerChunk.z + (float)k);
                 currentChunks.insert(requestedChunk);
@@ -526,7 +525,10 @@ void postRender() {
 
     glm::mat4 projection = glm::ortho(0.0f, (float)Main::windowWidth, (float)Main::windowHeight, 0.0f, -1.0f, 1.0f);
 
+    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(Main::windowScaleX, Main::windowScaleY, 1.0f));
+
     glUniformMatrix4fv(Main::fontShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
+    glUniformMatrix4fv(Main::fontShader->uniforms["scale"], 1, GL_FALSE, &scale[0][0]);
     glUniform1i(Main::fontShader->uniforms["textureSampler"], 1);
 
     Main::menuManager->render();
@@ -721,7 +723,7 @@ int main() {
     });
 
     Main::ourShader = new Shader("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}, {"ambientLevel", 0}, {"chunkSampler", 0}, {"model", 0}});
-    Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"textureSampler", 0}, {"color", 0}, {"background", 0}, {"texindex", 0}});
+    Main::fontShader = new Shader("/assets/shaders/vertfont.glsl", "/assets/shaders/fragfont.glsl", {{"projection", 0}, {"scale", 0}, {"textureSampler", 0}, {"color", 0}, {"background", 0}, {"texindex", 0}});
     Main::entityShader = new Shader("/assets/shaders/vertentity.glsl", "/assets/shaders/fragentity.glsl", {{"view", 0}, {"projection", 0}, {"textureSampler", 0}});
     Main::fxaaShader = new Shader("/assets/shaders/vertFXAA.glsl", "/assets/shaders/fragFXAA.glsl", {{"uEnabled", 0}, {"uFrameTex", 0}, {"uViewportSize", 0}});
     Main::billboardShader = new Shader("/assets/shaders/vertbill.glsl", "/assets/shaders/fragbill.glsl", {{"projection", 0}, {"view", 0}});
@@ -799,11 +801,11 @@ int main() {
 
     {
         Main::menuManager = new GUIManager();
-        std::shared_ptr<TextElement> gamelabel = std::make_shared<TextElement>("gamelabel", [](int, int, int, bool)->bool{return false;}, 45.0f, 4.0f, 40, Main::fontManager, false);
+        std::shared_ptr<TextElement> gamelabel = std::make_shared<TextElement>("gamelabel", [](int, int, int, bool)->bool{return false;}, 42.0f, 6.0f, 80, Main::fontManager, false);
         gamelabel->color = glm::vec3(0.25f, 0.75f, 0.25f);
         gamelabel->setText("MineWeb");
         Main::menuManager->addElement(gamelabel);
-        std::shared_ptr<TextElement> verlabel = std::make_shared<TextElement>("verlabel", [](int, int, int, bool)->bool{return false;}, 47.0f, 8.0f, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> verlabel = std::make_shared<TextElement>("verlabel", [](int, int, int, bool)->bool{return false;}, 47.0f, 10.0f, 20, Main::fontManager, false);
         verlabel->color = glm::vec3(0.5f, 0.5f, 0.5f);
         verlabel->setText("Version: dev");
         Main::menuManager->addElement(verlabel);
@@ -1038,7 +1040,7 @@ int main() {
     std::shared_ptr<KeyBind> raiseRDBind = std::make_shared<KeyBind>([&](bool pressed) {
         if (!pressed) { return; }
         if (Main::serverConnected && SocketClient::getInstance().connectionState == PLAY) {
-            renderDistance = std::min(renderDistance + 1, 16);
+            Main::renderDistance = std::min(Main::renderDistance + 1, 16);
         }
     });
     Main::keyManager->setKeyBind("KeyY", raiseRDBind);
@@ -1046,7 +1048,7 @@ int main() {
     std::shared_ptr<KeyBind> lowerRDBind = std::make_shared<KeyBind>([&](bool pressed) {
         if (!pressed) { return; }
         if (Main::serverConnected && SocketClient::getInstance().connectionState == PLAY) {
-            renderDistance = std::min(renderDistance - 1, 3);
+            Main::renderDistance = std::max(Main::renderDistance - 1, 3);
         }
     });
     Main::keyManager->setKeyBind("KeyH", lowerRDBind);

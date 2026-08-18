@@ -34,6 +34,7 @@ namespace Main {
 
     inline std::unordered_map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Hash<float>, vec3Equals> chunks;
     inline std::set<glm::vec3, vec3Comparator> requestedChunks;
+    inline int renderDistance = 5; // 3 min
 
     inline std::unique_ptr<PhysicsEngine> physicsEngine;
     inline std::mutex entityMutex;
@@ -57,4 +58,6 @@ namespace Main {
 
     inline int windowWidth = 800;
     inline int windowHeight = 600;
+    inline float windowScaleX = 1.0f;
+    inline float windowScaleY = 1.0f;
 }

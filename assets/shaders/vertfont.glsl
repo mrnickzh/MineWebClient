@@ -9,6 +9,6 @@ out vec2 uv0;
 
 void main()
 {
-    gl_Position = projection * vec4(pos.x, pos.y, 0.0f, 1.0f);
+    gl_Position = projection * scale * vec4(pos.x, pos.y, 0.0f, 1.0f);
     uv0 = vec2(texcord.x, texcord.y);
 }
