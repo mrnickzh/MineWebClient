@@ -2,14 +2,23 @@
 
 #include "../../main.hpp"
 
-EnterElement::EnterElement(std::string id, std::function<bool(int, int, int, bool)> callback, int x, int y, int fontsize, FontManager* fm, int ml, std::string deftext, bool bg) : Element(id, callback, x, y, fontsize) {
+EnterElement::EnterElement(std::string id, std::function<bool(int, int, int, bool)> callback, float wPer, float hPer, int fontsize, FontManager* fm, int ml, std::string deftext, bool bg) : Element(id, callback, wPer, hPer, fontsize) {
+    x = (wPer / 100.0f) * Main::windowWidth;
+    y = (hPer / 100.0f) * Main::windowHeight;
+
     fontManager = fm;
     maxlen = ml;
     text = deftext;
     count = fontManager->genGlyphs(text, x, y, fontsize, vao, vbo, uv);
     background = bg;
+
+    dummybgtext.clear();
+    for (int i = 0; i < maxlen; i++) {
+        dummybgtext += "A";
+    }
+
     if (background) {
-        fontManager->genBackground(x - 5, y - 25, (10 * maxlen), 30, bvao, bvbo, buv);
+        bounds = fontManager->genBackground(dummybgtext, fontsize, x, y, 10, 10, bvao, bvbo, buv);
     }
 }
 
@@ -49,6 +58,26 @@ void EnterElement::setPosition(int posx, int posy) {
     y = posy;
     count = fontManager->genGlyphs(text, x, y, fontsize, vao, vbo, uv);
     if (background) {
-        fontManager->genBackground(x - 5, y - 25, (10 * maxlen), 30, bvao, bvbo, buv);
+        dummybgtext.clear();
+        for (int i = 0; i < maxlen; i++) {
+            dummybgtext += "A";
+        }
+
+        bounds = fontManager->genBackground(dummybgtext, fontsize, x, y, 10, 10, bvao, bvbo, buv);
     }
 }
+
+bool EnterElement::checkBounds(int x, int y) {
+    if ((float)x > bounds.minX && (float)x < bounds.maxX && (float)y > bounds.minY && (float)y < bounds.maxY) {
+        return true;
+    }
+    return false;
+}
+
+void EnterElement::reposition() {
+    x = (wPer / 100.0f) * Main::windowWidth;
+    y = (hPer / 100.0f) * Main::windowHeight;
+    setPosition(x, y);
+}
+
+

@@ -8,6 +8,7 @@
 class EnterElement : public Element {
 public:
     std::string text;
+    TextBounds bounds;
     GLuint vao, vbo, uv = 0;
     GLuint bvao, bvbo, buv = 0;
     FontManager* fontManager;
@@ -17,11 +18,14 @@ public:
     bool background = false;
     bool enteractive = false;
     int maxlen = 0;
+    std::string dummybgtext;
 
-    EnterElement(std::string id, std::function<bool(int, int, int, bool)> callback, int x, int y, int fontsize, FontManager* fm, int ml, std::string deftext, bool bg);
+    EnterElement(std::string id, std::function<bool(int, int, int, bool)> callback, float wPer, float hPer, int fontsize, FontManager* fm, int ml, std::string deftext, bool bg);
 
     void render() override;
     void addChar(const char chr);
     void removeChar();
     void setPosition(int x, int y) override;
+    bool checkBounds(int x, int y) override;
+    void reposition() override;
 };

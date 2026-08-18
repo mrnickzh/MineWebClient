@@ -20,4 +20,5 @@ public:
     std::shared_ptr<Element> getElement(std::string elementid);
     void render();
     bool poll(int x, int y, int stateMask, bool isProcessed);
+    void reposition();
 };

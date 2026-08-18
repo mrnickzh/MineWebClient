@@ -1,5 +1,8 @@
 #include "GUIManager.hpp"
 
+#include <iostream>
+#include <__ostream/basic_ostream.h>
+
 void GUIManager::addElement(std::shared_ptr<Element> element) {
     registeredElements.push_back(element);
 }
@@ -21,6 +24,13 @@ bool GUIManager::poll(int x, int y, int stateMask, bool isProcessed) {
         if (element->callback(x, y, stateMask, processed)) { processed = true; }
     }
     return processed;
+}
+
+void GUIManager::reposition() {
+    if (!active) { return; }
+    for (auto& element : registeredElements) {
+        element->reposition();
+    }
 }
 
 void GUIManager::render() {

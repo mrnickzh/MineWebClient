@@ -16,7 +16,7 @@ EM_BOOL InputHandler::touchMoved(int eventType, const EmscriptenTouchEvent* e, v
         float cy = (float)e->touches[i].clientY;
         float px = (float)touches[e->touches[i].identifier].clientX;
         float py = (float)touches[e->touches[i].identifier].clientY;
-        MouseEvent event(cx, cy, cx - px, cy - py, MOUSE_LEFT, true);
+        MouseEvent event(cx * Main::DPR, cy * Main::DPR, (cx - px)  * Main::DPR, (cy - py)  * Main::DPR, MOUSE_LEFT, true);
         EventBus::getInstance().publish(&event);
     }
     return EM_FALSE;
@@ -30,7 +30,7 @@ EM_BOOL InputHandler::touchStart(int eventType, const EmscriptenTouchEvent* e, v
     }
     float cx = (float)e->touches[e->numTouches - 1].clientX;
     float cy = (float)e->touches[e->numTouches - 1].clientY;
-    MouseEvent event(cx, cy, 0.0f, 0.0f, MOUSE_LEFT, true);
+    MouseEvent event(cx * Main::DPR, cy * Main::DPR, 0.0f, 0.0f, MOUSE_LEFT, true);
     buttons[MOUSE_LEFT] = true;
     EventBus::getInstance().publish(&event);
     if (event.canceled)  return EM_TRUE;
@@ -44,7 +44,7 @@ EM_BOOL InputHandler::touchEnd(int eventType, const EmscriptenTouchEvent* e, voi
         if (e->touches[i].isChanged) {
             float cx = (float)e->touches[i].clientX;
             float cy = (float)e->touches[i].clientY;
-            MouseEvent event(cx, cy, 0.0f, 0.0f, MOUSE_LEFT, false);
+            MouseEvent event(cx * Main::DPR, cy * Main::DPR, 0.0f, 0.0f, MOUSE_LEFT, false);
             buttons[MOUSE_LEFT] = false;
             EventBus::getInstance().publish(&event);
             if (event.canceled)  return EM_TRUE;
@@ -55,14 +55,14 @@ EM_BOOL InputHandler::touchEnd(int eventType, const EmscriptenTouchEvent* e, voi
 }
 
 EM_BOOL InputHandler::mouseMoved(int eventType, const EmscriptenMouseEvent* e, void*) {
-    MouseEvent event((float)e->clientX, (float)e->clientY, (float)e->movementX, (float)e->movementY, e->button, (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN));
+    MouseEvent event((float)e->clientX * Main::DPR, (float)e->clientY * Main::DPR, (float)e->movementX * Main::DPR, (float)e->movementY * Main::DPR, e->button, (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN));
     EventBus::getInstance().publish(&event);
     if (event.canceled) return EM_TRUE;
     return EM_FALSE;
 }
 
 EM_BOOL InputHandler::mouseButton(int eventType, const EmscriptenMouseEvent* e, void*) {
-    MouseEvent event((float)e->clientX, (float)e->clientY, (float)e->movementX, (float)e->movementY, e->button, (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN));
+    MouseEvent event((float)e->clientX * Main::DPR, (float)e->clientY * Main::DPR, (float)e->movementX * Main::DPR, (float)e->movementY * Main::DPR, e->button, (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN));
     buttons[e->button] = (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN);
     EventBus::getInstance().publish(&event);
     if (event.canceled) return EM_TRUE;

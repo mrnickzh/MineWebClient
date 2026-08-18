@@ -31,6 +31,7 @@ int FontManager::offsetFromSize(int size) {
         }
         offset++;
     }
+    assert(false);
 }
 
 void FontManager::init(const std::string& path, std::vector<int>& sizes) {
@@ -52,8 +53,8 @@ void FontManager::init(const std::string& path, std::vector<int>& sizes) {
         2048, 2048, (int)sizes.size()           //width,height
     );
 
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
@@ -93,7 +94,7 @@ GlyphInfo FontManager::getGlyphInfo(int size, uint32_t character, float offsetX,
 {
     stbtt_aligned_quad quad;
 
-    stbtt_GetPackedQuad(fonts[size]->charInfo.get(), (int)fonts[size]->atlasWidth, (int)fonts[size]->atlasHeight, (int)(character - fonts[size]->firstChar), &offsetX, &offsetY, &quad, 1);
+    stbtt_GetPackedQuad(fonts[size]->charInfo.get(), (int)fonts[size]->atlasWidth, (int)fonts[size]->atlasHeight, (int)(character - fonts[size]->firstChar), &offsetX, &offsetY, &quad, 0);
     auto xmin = quad.x0;
     auto xmax = quad.x1;
     auto ymin = quad.y0;
@@ -182,16 +183,27 @@ void FontManager::render(GLuint& vao, GLuint& vbo, GLuint& uv, int count) {
     glDrawArrays(GL_TRIANGLES, 0, count);
 }
 
-void FontManager::genBackground(int x, int y, int w, int h, GLuint& vao, GLuint& vbo, GLuint& uv) {
+TextBounds FontManager::genBackground(const std::string& text, int size,
+                                int x, int y,
+                                int borderX, int borderY,
+                                GLuint& vao, GLuint& vbo, GLuint& uv) {
+
+    TextBounds bounds = getTextBounds(text, size, (float)x, (float)y);
+
+    float bgX = bounds.minX - (float)borderX;
+    float bgY = bounds.minY - (float)borderY;
+    float bgW = bounds.width()  + 2.0f * (float)borderX;
+    float bgH = bounds.height() + 2.0f * (float)borderY;
+
     std::vector<glm::vec2> vertices;
     std::vector<glm::vec2> uvs = {glm::vec2(0.0f, 0.0f), glm::vec2(0.0f, 0.0f), glm::vec2(0.0f, 0.0f), glm::vec2(0.0f, 0.0f), glm::vec2(0.0f, 0.0f), glm::vec2(0.0f, 0.0f)};
 
-    vertices.emplace_back((float)x, (float)y);
-    vertices.emplace_back((float)(x + w), (float)(y));
-    vertices.emplace_back((float)(x + w), (float)(y + h));
-    vertices.emplace_back((float)x, (float)y);
-    vertices.emplace_back((float)(x + w), (float)(y + h));
-    vertices.emplace_back((float)(x), (float)(y + h));
+    vertices.emplace_back(bgX, bgY);
+    vertices.emplace_back(bgX + bgW, bgY);
+    vertices.emplace_back(bgX + bgW, bgY + bgH);
+    vertices.emplace_back(bgX, bgY);
+    vertices.emplace_back(bgX + bgW, bgY + bgH);
+    vertices.emplace_back(bgX, bgY + bgH);
 
     if (!vao)
         glGenVertexArrays(1, &vao);
@@ -207,6 +219,8 @@ void FontManager::genBackground(int x, int y, int w, int h, GLuint& vao, GLuint&
     glBindBuffer(GL_ARRAY_BUFFER, uv);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 2 * uvs.size(), uvs.data(), GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    return TextBounds(bgX, bgY, bgX + bgW, bgY + bgH);
 }
 
 void FontManager::renderBackground(GLuint& vao, GLuint& vbo, GLuint& uv) {
@@ -221,4 +235,34 @@ void FontManager::renderBackground(GLuint& vao, GLuint& vbo, GLuint& uv) {
     glEnableVertexAttribArray(1);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+TextBounds FontManager::getTextBounds(const std::string& text, int size, float startX, float startY)
+{
+    TextBounds bounds;
+    bounds.minX = bounds.minY =  std::numeric_limits<float>::max();
+    bounds.maxX = bounds.maxY = -std::numeric_limits<float>::max();
+
+    float offsetX = startX;
+    float offsetY = startY;
+
+    for (char c : text)
+    {
+        stbtt_aligned_quad quad;
+        stbtt_GetPackedQuad(
+            fonts[size]->charInfo.get(),
+            (int)fonts[size]->atlasWidth,
+            (int)fonts[size]->atlasHeight,
+            (int)(c - fonts[size]->firstChar),
+            &offsetX, &offsetY,
+            &quad,
+            0);
+
+        bounds.minX = std::min(bounds.minX, quad.x0);
+        bounds.minY = std::min(bounds.minY, quad.y0);
+        bounds.maxX = std::max(bounds.maxX, quad.x1);
+        bounds.maxY = std::max(bounds.maxY, quad.y1);
+    }
+
+    return bounds;
 }

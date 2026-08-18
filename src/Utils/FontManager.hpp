@@ -14,6 +14,12 @@ struct GlyphInfo
     float offsetX, offsetY;
 };
 
+struct TextBounds {
+    float minX, minY, maxX, maxY;
+    float width()  const { return maxX - minX; }
+    float height() const { return maxY - minY; }
+};
+
 class FontManager {
 public:
     GLuint fontArray = 0;
@@ -23,6 +29,7 @@ public:
     void render(GLuint& vao, GLuint& vbo, GLuint& uv, int count);
     GlyphInfo getGlyphInfo(int size, uint32_t character, float offsetX, float offsetY);
     int genGlyphs(const std::string& text, int x, int y, int size, GLuint& vao, GLuint& vbo, GLuint& uv);
-    void genBackground(int x, int y, int w, int h, GLuint& vao, GLuint& vbo, GLuint& uv);
+    TextBounds genBackground(const std::string& text, int size, int x, int y, int borderX, int borderY, GLuint& vao, GLuint& vbo, GLuint& uv);
     void renderBackground(GLuint& vao, GLuint& vbo, GLuint& uv);
+    TextBounds getTextBounds(const std::string& text, int size, float startX, float startY);
 };

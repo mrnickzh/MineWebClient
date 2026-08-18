@@ -8,6 +8,7 @@
 class TextElement : public Element {
 public:
     std::string text;
+    TextBounds bounds;
     GLuint vao, vbo, uv = 0;
     GLuint bvao, bvbo, buv = 0;
     FontManager* fontManager;
@@ -16,9 +17,11 @@ public:
     glm::vec3 bcolor = glm::vec3(0.0f, 0.0f, 0.0f);
     bool background = false;
 
-    TextElement(std::string id, std::function<bool(int, int, int, bool)> callback, int x, int y, int fontsize, FontManager* fm, bool bg);
+    TextElement(std::string id, std::function<bool(int, int, int, bool)> callback, float wPer, float hPer, int fontsize, FontManager* fm, bool bg);
 
     void render() override;
     void setText(const std::string& t);
     void setPosition(int x, int y) override;
+    bool checkBounds(int x, int y) override;
+    void reposition() override;
 };

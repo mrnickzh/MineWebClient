@@ -1,5 +1,6 @@
 #pragma once
 
+#include "KeyManager.hpp"
 #include "Shader.hpp"
 #include "Objects/Object.hpp"
 #include "../MineWebServer/src/Server.hpp"
@@ -29,6 +30,8 @@ namespace Main {
     inline GUIManager* touchManager;
     inline GUIManager* chatUIManager;
 
+    inline KeyManager* keyManager;
+
     inline std::unordered_map<glm::vec3, std::shared_ptr<ChunkMap>, vec3Hash<float>, vec3Equals> chunks;
     inline std::set<glm::vec3, vec3Comparator> requestedChunks;
 
@@ -50,4 +53,8 @@ namespace Main {
     inline std::deque<std::string> chatMessages = {"", "", "", "", ""};
 
     inline bool isMobile = false;
+    inline float DPR = 1.0f;
+
+    inline int windowWidth = 800;
+    inline int windowHeight = 600;
 }

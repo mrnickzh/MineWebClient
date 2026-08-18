@@ -136,9 +136,6 @@ Camera* ourCamera;
 
 GLFWwindow* window = nullptr;
 
-int windowWidth = 800;
-int windowHeight = 600;
-
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float lastCounter = 0.0f;
@@ -239,38 +236,22 @@ extern "C" {
 }
 
 EM_BOOL onResize(int, const EmscriptenUiEvent* e, void*) {
-    windowWidth = e->windowInnerWidth;
-    windowHeight = e->windowInnerHeight;
-    glViewport(0, 0, windowWidth, windowHeight);
-    glfwSetWindowSize(window, windowWidth, windowHeight);
+    Main::windowWidth  = (int)((float)e->windowInnerWidth * Main::DPR);
+    Main::windowHeight = (int)((float)e->windowInnerHeight * Main::DPR);
 
-    std::shared_ptr<Element> gl = Main::menuManager->getElement("gamelabel");
-    gl->setPosition((windowWidth/2)-80, gl->y);
-    std::shared_ptr<Element> vl = Main::menuManager->getElement("verlabel");
-    vl->setPosition((windowWidth/2)-60, vl->y);
+    emscripten_set_canvas_element_size("#canvas", Main::windowWidth, Main::windowHeight);
+    emscripten_set_element_css_size("#canvas", (double)e->windowInnerWidth, (double)e->windowInnerHeight);
 
-    std::shared_ptr<Element> cfs = Main::touchManager->getElement("callfullscreen");
-    cfs->setPosition((windowWidth/18)*17, windowHeight/12);
+    glViewport(0, 0, Main::windowWidth, Main::windowHeight);
+    glfwSetWindowSize(window, Main::windowWidth, Main::windowHeight);
 
-    std::shared_ptr<Element> lmb = Main::touchManager->getElement("leftclick");
-    lmb->setPosition((windowWidth/18)*2, windowHeight/6);
-    std::shared_ptr<Element> rmb = Main::touchManager->getElement("rightclick");
-    rmb->setPosition((windowWidth/18)*4, windowHeight/6);
-
-    std::shared_ptr<Element> spc = Main::touchManager->getElement("movejump");
-    spc->setPosition((windowWidth/18)*15, (windowHeight/18)*15);
-
-    std::shared_ptr<Element> mvf = Main::touchManager->getElement("moveforward");
-    mvf->setPosition((windowWidth/18)*3, (windowHeight/18)*12);
-    std::shared_ptr<Element> mvb = Main::touchManager->getElement("movebackward");
-    mvb->setPosition((windowWidth/18)*3, (windowHeight/18)*16);
-    std::shared_ptr<Element> mvl = Main::touchManager->getElement("moveleft");
-    mvl->setPosition((windowWidth/18)*2, (windowHeight/18)*14);
-    std::shared_ptr<Element> mvr = Main::touchManager->getElement("moveright");
-    mvr->setPosition((windowWidth/18)*4, (windowHeight/18)*14);
+    Main::menuManager->reposition();
+    Main::gameUIManager->reposition();
+    Main::chatUIManager->reposition();
+    Main::touchManager->reposition();
 
     // std::shared_ptr<Element> lmb = Main::menuManager->getElement("leftclick");
-    // static_cast<TextElement*>(vl.get())->setPosition((windowWidth/2)-60, static_cast<TextElement*>(vl.get())->y);
+    // static_cast<TextElement*>(vl.get())->setPosition((Main::windowWidth/2)-60, static_cast<TextElement*>(vl.get())->y);
 
     return EM_TRUE;
 }
@@ -330,38 +311,7 @@ void processInput() {
                     ourCamera->Position += glm::vec3(0.0f, -5.0f * deltaTime, 0.0f) * ourCamera->Up;
             }
 
-            if (InputHandler::isMousePressed(MOUSE_LEFT) && Main::serverConnected) {
-                emscripten_request_pointerlock("canvas", EM_TRUE);
-            }
-
-            if (InputHandler::isKeyPressed("KeyC") && !freeCamLock) {
-                ourCamera->freeCam = !ourCamera->freeCam;
-                ourCamera->Yaw = rotation.y;
-                freeCamLock = true;
-            }
-            if (InputHandler::isKeyReleased("KeyC") && freeCamLock) {
-                freeCamLock = false;
-            }
-
-            if (InputHandler::isKeyPressed("KeyY") && !raiseLock) {
-                // ambientLevel = std::min(ambientLevel + 0.1f, 1.0f);
-                renderDistance = std::min(renderDistance + 1, 16);
-                raiseLock = true;
-            }
-            if (InputHandler::isKeyReleased("KeyY") && raiseLock) {
-                raiseLock = false;
-            }
-
-            if (InputHandler::isKeyPressed("KeyH") && !lowerLock) {
-                // ambientLevel = std::max(ambientLevel - 0.1f, 0.0f);
-                renderDistance = std::max(renderDistance - 1, 3);
-                lowerLock = true;
-            }
-            if (InputHandler::isKeyReleased("KeyH") && lowerLock) {
-                lowerLock = false;
-            }
-
-            if (((InputHandler::isMousePressed(MOUSE_LEFT) && checkPointerLock() && !Main::isMobile) || (InputHandler::isKeyPressed("LeftMouse") && Main::isMobile)) && !breakLock) {
+                        if (((InputHandler::isMousePressed(MOUSE_LEFT) && checkPointerLock() && !Main::isMobile) || (InputHandler::isKeyPressed("LeftMouse") && Main::isMobile)) && !breakLock) {
                 glm::vec3 p = Main::localPlayer->object->position + ourCamera->offset;
                 glm::vec3 r = glm::vec3(0.0f, Main::localPlayer->object->rotation.y, ourCamera->Pitch);
                 RaycastResult obj = Main::physicsEngine->raycast(3.0f, p, r);
@@ -409,31 +359,6 @@ void processInput() {
                 placeLock = false;
             }
 
-            if (InputHandler::isKeyPressed("KeyP") && !saveLock && Main::isSingleplayer) {
-                Main::serverInstance.saveWorld();
-                emscripten_run_script("saveFileFromMemoryFSToDisk('/world.mww','world.mww')");
-                saveLock = true;
-            }
-            if (InputHandler::isKeyReleased("KeyP") && saveLock) {
-                saveLock = false;
-            }
-
-            if (InputHandler::isKeyPressed("ShiftLeft") && !sprint) {
-                sprint = true;
-            }
-            if (InputHandler::isKeyReleased("ShiftLeft") && sprint) {
-                sprint = false;
-            }
-
-            if (InputHandler::isKeyPressed("ControlLeft") && !crouch) {
-                crouch = true;
-                Main::physicsEngine->getPhysicsObject(Main::localPlayer->object)->crouching = true;
-            }
-            if (InputHandler::isKeyReleased("ControlLeft") && crouch) {
-                crouch = false;
-                Main::physicsEngine->getPhysicsObject(Main::localPlayer->object)->crouching = false;
-            }
-
             if (InputHandler::isKeyPressed("Digit1")) {
                 selectedblock = 1;
             }
@@ -455,26 +380,15 @@ void processInput() {
             if (InputHandler::isKeyPressed("Digit7")) {
                 selectedblock = 7;
             }
-
-            if (InputHandler::isKeyPressed("KeyM")) {
-                assert(true == false);
+            if (InputHandler::isKeyPressed("Digit8")) {
+                selectedblock = 8;
+            }
+            if (InputHandler::isKeyPressed("Digit9")) {
+                selectedblock = 9;
             }
 
-            if (InputHandler::isKeyPressed("KeyL") && !fxaaLock) {
-                fxaaFlag = !fxaaFlag;
-                printf("FXAA: %d\n", fxaaFlag);
-                fxaaLock = true;
-            }
-            if (InputHandler::isKeyReleased("KeyL") && fxaaLock) {
-                fxaaLock = false;
-            }
-
-            if (InputHandler::isKeyPressed("KeyT") && !chatLock) {
-                Main::chatUIManager->getElement("chatenter")->active = true;
-                chatLock = true;
-            }
-            if (InputHandler::isKeyReleased("KeyT") && chatLock) {
-                chatLock = false;
+            if (InputHandler::isMousePressed(MOUSE_LEFT) && Main::serverConnected) {
+                emscripten_request_pointerlock("canvas", EM_TRUE);
             }
         }
     }
@@ -491,7 +405,7 @@ void preRender() {
     glDisable(GL_BLEND);
 
     glm::mat4 projection;
-    projection = glm::perspective(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(60.0f), (float)Main::windowWidth / (float)Main::windowHeight, 0.1f, 100.0f);
 
     Main::entityShader->use();
     glUniformMatrix4fv(Main::entityShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
@@ -527,7 +441,7 @@ void render() {
     static_cast<TextElement*>(e.get())->setText(coordsstr);
 
     if (!ourCamera->freeCam) {
-        cameraFrustum = ourCamera->createFrustumFromCamera(glm::radians(60.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
+        cameraFrustum = ourCamera->createFrustumFromCamera(glm::radians(60.0f), (float)Main::windowWidth / (float)Main::windowHeight, 0.1f, 100.0f);
     }
 
     // std::cout << playerChunk.x << " " << playerChunk.y << " " << playerChunk.z << std::endl;
@@ -610,7 +524,7 @@ void postRender() {
 
     Main::fontShader->use();
 
-    glm::mat4 projection = glm::ortho(0.0f, (float)windowWidth, (float)windowHeight, 0.0f, -1.0f, 1.0f);
+    glm::mat4 projection = glm::ortho(0.0f, (float)Main::windowWidth, (float)Main::windowHeight, 0.0f, -1.0f, 1.0f);
 
     glUniformMatrix4fv(Main::fontShader->uniforms["projection"], 1, GL_FALSE, &projection[0][0]);
     glUniform1i(Main::fontShader->uniforms["textureSampler"], 1);
@@ -619,9 +533,6 @@ void postRender() {
     Main::gameUIManager->render();
     Main::touchManager->render();
     Main::chatUIManager->render();
-
-    std::shared_ptr<Element> e = Main::gameUIManager->getElement("crosshair");
-    e->setPosition(windowWidth/2-10, windowHeight/2-10);
 }
 
 void loadAssets() {
@@ -662,12 +573,12 @@ void mainLoop() {
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, ftex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Main::windowWidth, Main::windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ftex, 0);
         glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, windowWidth, windowHeight);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, Main::windowWidth, Main::windowHeight);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
@@ -680,7 +591,7 @@ void mainLoop() {
         Main::fxaaShader->use();
         glUniform1i(Main::fxaaShader->uniforms["uEnabled"], fxaaFlag);
         glUniform1i(Main::fxaaShader->uniforms["uFrameTex"], 3);
-        glUniform2f(Main::fxaaShader->uniforms["uViewportSize"], (float)windowWidth, (float)windowHeight);
+        glUniform2f(Main::fxaaShader->uniforms["uViewportSize"], (float)Main::windowWidth, (float)Main::windowHeight);
 
         glBindVertexArray(fvao);
         glActiveTexture(GL_TEXTURE3);
@@ -734,7 +645,10 @@ void mainLoop() {
 int main() {
     bool ticklooprunning = true;
 
-    emscripten_get_canvas_element_size("#canvas", &windowWidth, &windowHeight);
+    Main::DPR = (float)emscripten_get_device_pixel_ratio();
+    emscripten_get_canvas_element_size("#canvas", &Main::windowWidth, &Main::windowHeight);
+    Main::windowWidth = Main::windowWidth * Main::DPR;
+    Main::windowHeight = Main::windowHeight * Main::DPR;
     emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, onResize);
 
     if (!glfwInit())
@@ -743,7 +657,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_SAMPLES, 0);
-    window = glfwCreateWindow(windowWidth, windowHeight, "MineWeb", nullptr, nullptr);
+    window = glfwCreateWindow(Main::windowWidth, Main::windowHeight, "MineWeb", nullptr, nullptr);
     if (!window) {
         glfwTerminate();
         return EXIT_FAILURE;
@@ -778,8 +692,8 @@ int main() {
         if (event->canceled) {return;}
         int x = event->posx;
         int y = event->posy;
-        int dx = event->deltax;
-        int dy = event->deltay;
+        int dx = event->deltax * (Main::isMobile ? 0.5 : 1);
+        int dy = event->deltay * (Main::isMobile ? 0.5 : 1);
 
         int stateMask = 0x0000;
 
@@ -812,7 +726,7 @@ int main() {
     Main::fxaaShader = new Shader("/assets/shaders/vertFXAA.glsl", "/assets/shaders/fragFXAA.glsl", {{"uEnabled", 0}, {"uFrameTex", 0}, {"uViewportSize", 0}});
     Main::billboardShader = new Shader("/assets/shaders/vertbill.glsl", "/assets/shaders/fragbill.glsl", {{"projection", 0}, {"view", 0}});
 
-    std::vector<int> fontsizes = {20, 40};
+    std::vector<int> fontsizes = {20, 40, 80};
     Main::fontManager = new FontManager();
     Main::fontManager->init("/assets/fonts/montserrat.ttf", fontsizes);
 
@@ -852,14 +766,14 @@ int main() {
     {
         Main::chatUIManager = new GUIManager();
         Main::chatUIManager->active = false;
-        std::shared_ptr<EnterElement> chatenter = std::make_shared<EnterElement>("chatenter", [](int, int, int, bool)->bool{return false;}, 20, 500, 20, Main::fontManager, 128, "", true);
+        std::shared_ptr<EnterElement> chatenter = std::make_shared<EnterElement>("chatenter", [](int, int, int, bool)->bool{return false;}, 1.0f, 40.0f, 20, Main::fontManager, 128, "", true);
         chatenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
         chatenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         chatenter->active = false;
         chatenter->enteractive = true;
         Main::chatUIManager->addElement(chatenter);
         for (int i = 0; i < 5; i++){
-            std::shared_ptr<TextElement> chatrow = std::make_shared<TextElement>("chatrow" + std::to_string(i), [](int, int, int, bool)->bool{return false;}, 20, 450 - (i * 25), 20, Main::fontManager, false);
+            std::shared_ptr<TextElement> chatrow = std::make_shared<TextElement>("chatrow" + std::to_string(i), [](int, int, int, bool)->bool{return false;}, 1.0f, 35.0f - (float)i * 2.0f, 20, Main::fontManager, false);
             chatrow->color = glm::vec3(1.0f, 1.0f, 1.0f);
             chatrow->setText("");
             Main::chatUIManager->addElement(chatrow);
@@ -869,15 +783,15 @@ int main() {
     {
         Main::gameUIManager = new GUIManager();
         Main::gameUIManager->active = false;
-        std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int, int, int, bool)->bool{return false;}, 0, 20, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> fpscounter = std::make_shared<TextElement>("fpscounter", [](int, int, int, bool)->bool{return false;}, 0.0f, 2.0f, 20, Main::fontManager, false);
         fpscounter->color = glm::vec3(0.0f, 0.0f, 0.0f);
         fpscounter->setText("FPS: 0");
         Main::gameUIManager->addElement(fpscounter);
-        std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int, int, int, bool)->bool{return false;}, 0, 0, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> crosshair = std::make_shared<TextElement>("crosshair", [](int, int, int, bool)->bool{return false;}, 47.5f, 47.5f, 40, Main::fontManager, false);
         crosshair->color = glm::vec3(1.0f, 1.0f, 1.0f);
         crosshair->setText("+");
         Main::gameUIManager->addElement(crosshair);
-        std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int, int, int, bool)->bool{return false;}, 0, 40, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> coords = std::make_shared<TextElement>("coords", [](int, int, int, bool)->bool{return false;}, 0.0f, 4.0f, 20, Main::fontManager, false);
         coords->color = glm::vec3(0.0f, 0.0f, 0.0f);
         coords->setText("x: 0, y: 0, z: 0, cx: 0, cy: 0, cz: 0, blk: 1, mem: 0");
         Main::gameUIManager->addElement(coords);
@@ -885,60 +799,60 @@ int main() {
 
     {
         Main::menuManager = new GUIManager();
-        std::shared_ptr<TextElement> gamelabel = std::make_shared<TextElement>("gamelabel", [](int, int, int, bool)->bool{return false;}, (windowWidth/2)-80, 40, 40, Main::fontManager, false);
+        std::shared_ptr<TextElement> gamelabel = std::make_shared<TextElement>("gamelabel", [](int, int, int, bool)->bool{return false;}, 45.0f, 4.0f, 40, Main::fontManager, false);
         gamelabel->color = glm::vec3(0.25f, 0.75f, 0.25f);
         gamelabel->setText("MineWeb");
         Main::menuManager->addElement(gamelabel);
-        std::shared_ptr<TextElement> verlabel = std::make_shared<TextElement>("verlabel", [](int, int, int, bool)->bool{return false;}, (windowWidth/2)-60, 80, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> verlabel = std::make_shared<TextElement>("verlabel", [](int, int, int, bool)->bool{return false;}, 47.0f, 8.0f, 20, Main::fontManager, false);
         verlabel->color = glm::vec3(0.5f, 0.5f, 0.5f);
         verlabel->setText("Version: dev");
         Main::menuManager->addElement(verlabel);
-        std::shared_ptr<TextElement> nicklabel = std::make_shared<TextElement>("nicklabel", [](int, int, int, bool)->bool{return false;}, 100, 160, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> nicklabel = std::make_shared<TextElement>("nicklabel", [](int, int, int, bool)->bool{return false;}, 5.0f, 16.0f, 20, Main::fontManager, false);
         nicklabel->color = glm::vec3(0.1f, 0.1f, 0.1f);
         nicklabel->setText("Nickname:");
         Main::menuManager->addElement(nicklabel);
-        std::shared_ptr<EnterElement> nickenter = std::make_shared<EnterElement>("nickenter", nullptr, 100, 200, 20, Main::fontManager, 16, "", true);
+        std::shared_ptr<EnterElement> nickenter = std::make_shared<EnterElement>("nickenter", nullptr, 5.0f, 20.0f, 20, Main::fontManager, 16, "", true);
         nickenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
         nickenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         Main::menuManager->addElement(nickenter);
-        std::shared_ptr<TextElement> iplabel = std::make_shared<TextElement>("iplabel", [](int, int, int, bool)->bool{return false;}, 100, 240, 20, Main::fontManager, false);
+        std::shared_ptr<TextElement> iplabel = std::make_shared<TextElement>("iplabel", [](int, int, int, bool)->bool{return false;}, 5.0f, 24.0f, 20, Main::fontManager, false);
         iplabel->color = glm::vec3(0.1f, 0.1f, 0.1f);
         iplabel->setText("Server IP:");
         Main::menuManager->addElement(iplabel);
-        std::shared_ptr<EnterElement> ipenter = std::make_shared<EnterElement>("ipenter", nullptr, 100, 280, 20, Main::fontManager, 64, "", true);
+        std::shared_ptr<EnterElement> ipenter = std::make_shared<EnterElement>("ipenter", nullptr, 5.0f, 27.0f, 20, Main::fontManager, 64, "", true);
         ipenter->color = glm::vec3(1.0f, 1.0f, 1.0f);
         ipenter->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         Main::menuManager->addElement(ipenter);
         nickenter->callback = [&, nickenter, ipenter](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { return false; }
-            if (x > (nickenter->x - 5) && x < (nickenter->x + 10 * nickenter->maxlen) && y > (nickenter->y - 25) && y < (nickenter->y + 5)) {
+            if (nickenter->checkBounds(x, y)) {
                 nickenter->enteractive = true;
                 if (Main::isMobile) { emscripten_run_script("callKeyboard(false)"); }
                 return true;
             }
             else {
                 nickenter->enteractive = false;
-                if (Main::isMobile && !(x > (ipenter->x - 5) && x < (ipenter->x + 10 * ipenter->maxlen) && y > (ipenter->y - 25) && y < (ipenter->y + 5))) { emscripten_run_script("callKeyboard(true)"); }
+                if (Main::isMobile && !ipenter->checkBounds(x, y)) { emscripten_run_script("callKeyboard(true)"); }
             }
             return false;
         };
         ipenter->callback = [&, ipenter, nickenter](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { return false; }
-            if (x > (ipenter->x - 5) && x < (ipenter->x + 10 * ipenter->maxlen) && y > (ipenter->y - 25) && y < (ipenter->y + 5)) {
+            if (ipenter->checkBounds(x, y)) {
                 ipenter->enteractive = true;
                 if (Main::isMobile) { emscripten_run_script("callKeyboard(false)"); }
                 return true;
             }
             else {
                 ipenter->enteractive = false;
-                if (Main::isMobile && !(x > (nickenter->x - 5) && x < (nickenter->x + 10 * nickenter->maxlen) && y > (nickenter->y - 25) && y < (nickenter->y + 5))) { emscripten_run_script("callKeyboard(true)"); }
+                if (Main::isMobile && !nickenter->checkBounds(x, y)) { emscripten_run_script("callKeyboard(true)"); }
             }
             return false;
         };
-        std::shared_ptr<TextElement> joinbutton = std::make_shared<TextElement>("joinbutton", nullptr, 100, 320, 20, Main::fontManager, true);
+        std::shared_ptr<TextElement> joinbutton = std::make_shared<TextElement>("joinbutton", nullptr, 5.0f, 32.0f, 20, Main::fontManager, true);
         joinbutton->callback = [&, joinbutton, ipenter, nickenter](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { return false; }
-            if (x > (joinbutton->x - 5) && x < (joinbutton->x - 5 + 10 * joinbutton->text.length()) && y > (joinbutton->y - 25) && y < (joinbutton->y + 5)) {
+            if (joinbutton->checkBounds(x, y)) {
                 Main::serverAddress = ipenter->text;
                 if (nickenter->text.empty()) { srand(time(NULL)); Main::localName = "player" + std::to_string(1000 + rand() % (9999 - 1000 + 1)); }
                 else { Main::localName = nickenter->text; }
@@ -957,10 +871,10 @@ int main() {
         joinbutton->bcolor = glm::vec3(1.0f, 0.5f, 0.5f);
         joinbutton->setText("Join Server");
         Main::menuManager->addElement(joinbutton);
-        std::shared_ptr<TextElement> localbutton = std::make_shared<TextElement>("localbutton", nullptr, 100, 420, 20, Main::fontManager, true);
+        std::shared_ptr<TextElement> localbutton = std::make_shared<TextElement>("localbutton", nullptr, 5.0f, 42.0f, 20, Main::fontManager, true);
         localbutton->callback = [&, localbutton, ipenter, nickenter](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { return false; }
-            if (x > (localbutton->x - 5) && x < (localbutton->x - 5 + 10 * localbutton->text.length()) && y > (localbutton->y - 25) && y < (localbutton->y + 5)) {
+            if (localbutton->checkBounds(x, y)) {
                 Main::serverAddress = "localhost";
                 Main::localName = "player";
                 SocketClient::getInstance().connect();
@@ -978,10 +892,10 @@ int main() {
         localbutton->bcolor = glm::vec3(0.5f, 1.0f, 0.5f);
         localbutton->setText("Play Offline");
         Main::menuManager->addElement(localbutton);
-        std::shared_ptr<TextElement> importbutton = std::make_shared<TextElement>("importbutton", nullptr, 100, 480, 20, Main::fontManager, true);
+        std::shared_ptr<TextElement> importbutton = std::make_shared<TextElement>("importbutton", nullptr, 5.0f, 48.0f, 20, Main::fontManager, true);
         importbutton->callback = [&, importbutton](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { loadLock = false; return false; }
-            if (x > (importbutton->x - 5) && x < (importbutton->x - 5 + 10 * importbutton->text.length()) && y > (importbutton->y - 25) && y < (importbutton->y + 5) && !loadLock) {
+            if (importbutton->checkBounds(x, y) && !loadLock) {
                 emscripten_run_script("uploadSave()");
                 loadLock = true;
                 return true;
@@ -996,10 +910,10 @@ int main() {
 
     {
         Main::touchManager = new GUIManager();
-        std::shared_ptr<TextElement> callfullscreen = std::make_shared<TextElement>("callfullscreen", nullptr, 600, 20, 20, Main::fontManager, true);
+        std::shared_ptr<TextElement> callfullscreen = std::make_shared<TextElement>("callfullscreen", nullptr, 90.0f, 5.0f, 80, Main::fontManager, true);
         callfullscreen->callback = [&, callfullscreen](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { return false; }
-            if (x > (callfullscreen->x - 5) && x < (callfullscreen->x - 5 + 10 * callfullscreen->text.length()) && y > (callfullscreen->y - 25) && y < (callfullscreen->y + 5)) {
+            if (callfullscreen->checkBounds(x, y)) {
                 emscripten_request_fullscreen("canvas", EM_TRUE);
                 return true;
             }
@@ -1009,10 +923,10 @@ int main() {
         callfullscreen->bcolor = glm::vec3(1.0f, 1.0f, 0.5f);
         callfullscreen->setText("FLSCRN");
         Main::touchManager->addElement(callfullscreen);
-        std::shared_ptr<TextElement> moveforward = std::make_shared<TextElement>("moveforward", nullptr, 150, 250, 20, Main::fontManager, true);
+        std::shared_ptr<TextElement> moveforward = std::make_shared<TextElement>("moveforward", nullptr, 15.0f, 65.0f, 80, Main::fontManager, true);
         moveforward->callback = [&, moveforward](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyW"); return false; }
-            if (x > (moveforward->x - 5) && x < (moveforward->x - 5 + 10 * moveforward->text.length()) && y > (moveforward->y - 25) && y < (moveforward->y + 5)) {
+            if (moveforward->checkBounds(x, y)) {
                 InputHandler::addKey("KeyW");
                 return true;
             }
@@ -1022,10 +936,10 @@ int main() {
         moveforward->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         moveforward->setText("/\\");
         Main::touchManager->addElement(moveforward);
-        std::shared_ptr<TextElement> movebackward = std::make_shared<TextElement>("movebackward", nullptr, 150, 350, 20, Main::fontManager, true);
+        std::shared_ptr<TextElement> movebackward = std::make_shared<TextElement>("movebackward", nullptr, 15.0f, 85.0f, 80, Main::fontManager, true);
         movebackward->callback = [&, movebackward](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyS"); return false; }
-            if (x > (movebackward->x - 5) && x < (movebackward->x - 5 + 10 * movebackward->text.length()) && y > (movebackward->y - 25) && y < (movebackward->y + 5)) {
+            if (movebackward->checkBounds(x, y)) {
                 InputHandler::addKey("KeyS");
                 
                 return true;
@@ -1036,10 +950,10 @@ int main() {
         movebackward->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         movebackward->setText("\\/");
         Main::touchManager->addElement(movebackward);
-        std::shared_ptr<TextElement> moveright = std::make_shared<TextElement>("moveright", nullptr, 200, 300, 20, Main::fontManager, true);
+        std::shared_ptr<TextElement> moveright = std::make_shared<TextElement>("moveright", nullptr, 10.0f, 75.0f, 80, Main::fontManager, true);
         moveright->callback = [&, moveright](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyD"); return false; }
-            if (x > (moveright->x - 5) && x < (moveright->x - 5 + 10 * moveright->text.length()) && y > (moveright->y - 25) && y < (moveright->y + 5)) {
+            if (moveright->checkBounds(x, y)) {
                 InputHandler::addKey("KeyD");
                 
                 return true;
@@ -1050,10 +964,10 @@ int main() {
         moveright->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         moveright->setText(">>");
         Main::touchManager->addElement(moveright);
-        std::shared_ptr<TextElement> moveleft = std::make_shared<TextElement>("moveleft", nullptr, 100, 300, 20, Main::fontManager, true);
+        std::shared_ptr<TextElement> moveleft = std::make_shared<TextElement>("moveleft", nullptr, 20.0f, 75.0f, 80, Main::fontManager, true);
         moveleft->callback = [&, moveleft](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyA"); return false; }
-            if (x > (moveleft->x - 5) && x < (moveleft->x - 5 + 10 * moveleft->text.length()) && y > (moveleft->y - 25) && y < (moveleft->y + 5)) {
+            if (moveleft->checkBounds(x, y)) {
                 InputHandler::addKey("KeyA");
                 
                 return true;
@@ -1064,10 +978,10 @@ int main() {
         moveleft->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         moveleft->setText("<<");
         Main::touchManager->addElement(moveleft);
-        std::shared_ptr<TextElement> movejump = std::make_shared<TextElement>("movejump", nullptr, 650, 300, 20, Main::fontManager, true);
+        std::shared_ptr<TextElement> movejump = std::make_shared<TextElement>("movejump", nullptr, 80.0f, 75.0f, 80, Main::fontManager, true);
         movejump->callback = [&, movejump](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("Space"); return false; }
-            if (x > (movejump->x - 5) && x < (movejump->x - 5 + 10 * movejump->text.length()) && y > (movejump->y - 25) && y < (movejump->y + 5)) {
+            if (movejump->checkBounds(x, y)) {
                 InputHandler::addKey("Space");
                 
                 return true;
@@ -1078,10 +992,10 @@ int main() {
         movejump->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         movejump->setText("^");
         Main::touchManager->addElement(movejump);
-        std::shared_ptr<TextElement> leftclick = std::make_shared<TextElement>("leftclick", nullptr, 75, 50, 20, Main::fontManager, true);
+        std::shared_ptr<TextElement> leftclick = std::make_shared<TextElement>("leftclick", nullptr, 10.0f, 15.0f, 80, Main::fontManager, true);
         leftclick->callback = [&, leftclick](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("LeftMouse"); return false; }
-            if (x > (leftclick->x - 5) && x < (leftclick->x - 5 + 10 * leftclick->text.length()) && y > (leftclick->y - 25) && y < (leftclick->y + 5)) {
+            if (leftclick->checkBounds(x, y)) {
                 InputHandler::addKey("LeftMouse");
                 
                 return true;
@@ -1092,10 +1006,10 @@ int main() {
         leftclick->bcolor = glm::vec3(0.5f, 0.5f, 1.0f);
         leftclick->setText("LMB");
         Main::touchManager->addElement(leftclick);
-        std::shared_ptr<TextElement> rightclick = std::make_shared<TextElement>("rightclick", nullptr, 150, 50, 20, Main::fontManager, true);
+        std::shared_ptr<TextElement> rightclick = std::make_shared<TextElement>("rightclick", nullptr, 25.0f, 15.0f, 80, Main::fontManager, true);
         rightclick->callback = [&, rightclick](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("RightMouse"); return false; }
-            if (x > (rightclick->x - 5) && x < (rightclick->x - 5 + 10 * rightclick->text.length()) && y > (rightclick->y - 25) && y < (rightclick->y + 5)) {
+            if (rightclick->checkBounds(x, y)) {
                 InputHandler::addKey("RightMouse");
                 
                 return true;
@@ -1108,6 +1022,78 @@ int main() {
         Main::touchManager->addElement(rightclick);
         Main::touchManager->active = false;
     }
+
+    Main::keyManager = new KeyManager();
+
+    std::shared_ptr<KeyBind> freeCamBind = std::make_shared<KeyBind>([&](bool pressed) {
+        if (!pressed) { return; }
+        if (Main::serverConnected && SocketClient::getInstance().connectionState == PLAY) {
+            glm::vec3 rotation = Main::localPlayer->object->rotation;
+            ourCamera->freeCam = !ourCamera->freeCam;
+            ourCamera->Yaw = rotation.y;
+        }
+    });
+    Main::keyManager->setKeyBind("KeyC", freeCamBind);
+
+    std::shared_ptr<KeyBind> raiseRDBind = std::make_shared<KeyBind>([&](bool pressed) {
+        if (!pressed) { return; }
+        if (Main::serverConnected && SocketClient::getInstance().connectionState == PLAY) {
+            renderDistance = std::min(renderDistance + 1, 16);
+        }
+    });
+    Main::keyManager->setKeyBind("KeyY", raiseRDBind);
+
+    std::shared_ptr<KeyBind> lowerRDBind = std::make_shared<KeyBind>([&](bool pressed) {
+        if (!pressed) { return; }
+        if (Main::serverConnected && SocketClient::getInstance().connectionState == PLAY) {
+            renderDistance = std::min(renderDistance - 1, 3);
+        }
+    });
+    Main::keyManager->setKeyBind("KeyH", lowerRDBind);
+
+    std::shared_ptr<KeyBind> saveWorldBind = std::make_shared<KeyBind>([&](bool pressed) {
+        if (!pressed) { return; }
+        if (Main::serverConnected && SocketClient::getInstance().connectionState == PLAY) {
+            Main::serverInstance.saveWorld();
+            emscripten_run_script("saveFileFromMemoryFSToDisk('/world.mww','world.mww')");
+        }
+    });
+    Main::keyManager->setKeyBind("KeyP", saveWorldBind);
+
+    std::shared_ptr<KeyBind> sprintBind = std::make_shared<KeyBind>([&](bool pressed) {
+        if (Main::serverConnected && SocketClient::getInstance().connectionState == PLAY) {
+            if (pressed) { sprint = true; }
+            else { sprint = false; }
+        }
+    });
+    Main::keyManager->setKeyBind("ShiftLeft", sprintBind);
+
+    std::shared_ptr<KeyBind> crouchBind = std::make_shared<KeyBind>([&](bool pressed) {
+        if (Main::serverConnected && SocketClient::getInstance().connectionState == PLAY) {
+            if (pressed) { crouch = true; Main::physicsEngine->getPhysicsObject(Main::localPlayer->object)->crouching = true; }
+            else { crouch = false; Main::physicsEngine->getPhysicsObject(Main::localPlayer->object)->crouching = false; }
+        }
+    });
+    Main::keyManager->setKeyBind("ControlLeft", crouchBind);
+
+    std::shared_ptr<KeyBind> crashBind = std::make_shared<KeyBind>([&](bool pressed) {
+        if (!pressed) { return; }
+        assert(true == false);
+    });
+    Main::keyManager->setKeyBind("KeyM", crashBind);
+
+    std::shared_ptr<KeyBind> FXAABind = std::make_shared<KeyBind>([&](bool pressed) {
+        if (!pressed) { return; }
+        fxaaFlag = !fxaaFlag;
+        printf("FXAA: %d\n", fxaaFlag);
+    });
+    Main::keyManager->setKeyBind("KeyL", FXAABind);
+
+    std::shared_ptr<KeyBind> chatBind = std::make_shared<KeyBind>([&](bool pressed) {
+        if (!pressed) { return; }
+        Main::chatUIManager->getElement("chatenter")->active = true;
+    });
+    Main::keyManager->setKeyBind("KeyT", chatBind);
 
     L_SUBSCRIBE(KeyEvent, [](KeyEvent* event) {
         if (event->state && !Main::isMobile) {
@@ -1124,6 +1110,8 @@ int main() {
 
                 int keycode = (int)*(event->code);
                 ipenter->addChar((char)keycode);
+
+                return;
             }
 
             EnterElement* nickenter = static_cast<EnterElement*>(Main::menuManager->getElement("nickenter").get());
@@ -1139,6 +1127,8 @@ int main() {
 
                 int keycode = (int)*(event->code);
                 nickenter->addChar((char)keycode);
+
+                return;
             }
 
             EnterElement* chatenter = static_cast<EnterElement*>(Main::chatUIManager->getElement("chatenter").get());
@@ -1165,8 +1155,12 @@ int main() {
 
                 int keycode = (int)*(event->code);
                 chatenter->addChar((char)keycode);
+
+                return;
             }
         }
+
+        Main::keyManager->processKeyBinds(std::string(event->key), event->state);
     });
 
     Main::physicsEngine = std::make_unique<PhysicsEngine>(&Main::chunks);
@@ -1218,7 +1212,7 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glfwMakeContextCurrent(window);
-    glViewport(0, 0, windowWidth, windowHeight);
+    glViewport(0, 0, Main::windowWidth, Main::windowHeight);
 
     emscripten_set_main_loop(&mainLoop, 0, 1);
 
