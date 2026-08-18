@@ -952,7 +952,7 @@ int main() {
         movebackward->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         movebackward->setText("\\/");
         Main::touchManager->addElement(movebackward);
-        std::shared_ptr<TextElement> moveright = std::make_shared<TextElement>("moveright", nullptr, 10.0f, 75.0f, 80, Main::fontManager, true);
+        std::shared_ptr<TextElement> moveright = std::make_shared<TextElement>("moveright", nullptr, 20.0f, 75.0f, 80, Main::fontManager, true);
         moveright->callback = [&, moveright](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyD"); return false; }
             if (moveright->checkBounds(x, y)) {
@@ -966,7 +966,7 @@ int main() {
         moveright->bcolor = glm::vec3(0.5f, 0.5f, 0.5f);
         moveright->setText(">>");
         Main::touchManager->addElement(moveright);
-        std::shared_ptr<TextElement> moveleft = std::make_shared<TextElement>("moveleft", nullptr, 20.0f, 75.0f, 80, Main::fontManager, true);
+        std::shared_ptr<TextElement> moveleft = std::make_shared<TextElement>("moveleft", nullptr, 10.0f, 75.0f, 80, Main::fontManager, true);
         moveleft->callback = [&, moveleft](int x, int y, int stateMask, bool isProcessed) -> bool {
             if (stateMask != (LEFT_CLICK)) { InputHandler::removeKey("KeyA"); return false; }
             if (moveleft->checkBounds(x, y)) {
