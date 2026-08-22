@@ -196,6 +196,7 @@ void PhysicsEngine::calculateVelocity(std::shared_ptr<PhysicsObject> obj) {
         obj->object->position = pos;
         if (!isOnFoot(obj) && oldIsOnFoot) {
             obj->object->position = oldPos;
+            vel = glm::vec3(0.0f, 0.0f, 0.0f);
         }
         else {
             obj->setPosition(pos);

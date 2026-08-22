@@ -71,6 +71,20 @@
         }
     }
 
+    window.addEventListener('beforeunload', (event) => {
+        event.preventDefault();
+        event.returnValue = '';
+    });
+
+    window.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+        }
+    });
+
     (function () {
         var oldlog = console.log;
         var olderror = console.error;

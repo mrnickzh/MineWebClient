@@ -38,6 +38,7 @@ void Mod::loadBlock(std::string blockId, int id) {
 
 void Mod::loadMainLua() {
     mainLua.open_libraries(sol::lib::base);
+    mainLua.set_function("GAME_registerEvent", &Mod::registerEvent);
 
     std::ifstream file("/mods/" + modName + "/client/main.lua");
     std::stringstream script;
@@ -46,13 +47,17 @@ void Mod::loadMainLua() {
     mainLua.script(script.str());
 }
 
+void Mod::registerEvent(std::string event, sol::protected_function func) {
+    modEvents[event] = func;
+}
+
 void Mod::doEvent(std::string event) {
     std::cout << event << std::endl;
-    sol::protected_function func = mainLua[event];
+    sol::protected_function func = modEvents[event];
     sol::protected_function_result result = func();
     if (!result.valid()) {
         sol::error err = result;
-        std::cerr << "Error: " << err.what() << std::endl;
+        printf("Client mod '%s' error: %s", modName.c_str(), err.what());
     }
 }
 
